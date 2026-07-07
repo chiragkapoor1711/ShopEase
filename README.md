@@ -173,8 +173,6 @@ This project is developed for learning and portfolio purposes.
 
 **Chirag Kapoor**
 
-* GitHub: https://github.com/your-github-username
-* LinkedIn: https://www.linkedin.com/in/your-linkedin-profile/
 
 ---
 
