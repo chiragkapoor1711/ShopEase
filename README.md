@@ -7,7 +7,7 @@ A modern, responsive e-commerce homepage built with **Next.js** and **Tailwind C
 ## 🚀 Live Demo
 
 **Deployed on Vercel:**
-https://shop-ease-mzagblkkx-chirags-projects-e563f4e0.vercel.app/
+https://shop-ease-bice-nine.vercel.app/
 
 ---
 
