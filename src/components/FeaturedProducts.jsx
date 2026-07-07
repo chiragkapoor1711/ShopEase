@@ -62,63 +62,74 @@ const products = [
 
 export default function FeaturedProducts() {
   return (
-    <section className="py-16 bg-white">
+    <section className="py-16 bg-white dark:bg-gray-900 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-6">
+
         {/* Heading */}
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold text-gray-900">
+          <h2 className="text-4xl font-bold text-gray-900 dark:text-white">
             Featured Products
           </h2>
 
-          <p className="mt-3 text-gray-600">
+          <p className="mt-3 text-gray-600 dark:text-gray-300">
             Explore our best-selling products at amazing prices.
           </p>
         </div>
 
         {/* Product Grid */}
         <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+
           {products.map((product) => (
             <div
               key={product.id}
-              className="bg-white rounded-2xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-2"
+              className="bg-white dark:bg-gray-800 rounded-2xl shadow-md dark:shadow-gray-900/40 overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-2"
             >
               {/* Product Image */}
-              <div className="h-60 w-full relative flex items-center justify-center ">
+              <div className="h-60 w-full relative flex items-center justify-center bg-gray-50 dark:bg-gray-700">
                 <Image
                   src={product.image}
                   alt={product.name}
                   fill
                   sizes="(max-width: 640px) 100vw,
-           (max-width: 768px) 50vw,
-           (max-width: 1024px) 33vw,
-           25vw"
+                         (max-width: 768px) 50vw,
+                         (max-width: 1024px) 33vw,
+                         25vw"
                   className="object-contain"
                 />
               </div>
 
               {/* Product Details */}
               <div className="p-5">
-                <h3 className="text-lg font-semibold text-gray-800">
+
+                <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
                   {product.name}
                 </h3>
 
-                <p className="mt-2 text-2xl font-bold text-blue-600">
+                <p className="mt-2 text-2xl font-bold text-blue-600 dark:text-blue-400">
                   ₹{product.price}
                 </p>
 
                 {/* Rating */}
                 <div className="flex items-center gap-2 mt-3">
-                  <Star size={18} className="fill-yellow-400 text-yellow-400" />
-                  <span className="text-gray-600">{product.rating}</span>
+                  <Star
+                    size={18}
+                    className="fill-yellow-400 text-yellow-400"
+                  />
+
+                  <span className="text-gray-600 dark:text-gray-300">
+                    {product.rating}
+                  </span>
                 </div>
 
                 {/* Button */}
-                <button className="mt-5 w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition">
+                <button className="mt-5 w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg transition">
                   Add to Cart
                 </button>
+
               </div>
             </div>
           ))}
+
         </div>
       </div>
     </section>

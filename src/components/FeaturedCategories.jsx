@@ -29,16 +29,16 @@ const categories = [
 
 export default function FeaturedCategories() {
   return (
-    <section className="py-16 bg-gray-50">
+    <section className="py-16 bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-6">
 
         {/* Heading */}
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold text-gray-900">
+          <h2 className="text-4xl font-bold text-gray-900 dark:text-white">
             Featured Categories
           </h2>
 
-          <p className="mt-3 text-gray-600">
+          <p className="mt-3 text-gray-600 dark:text-gray-300">
             Browse our most popular shopping categories.
           </p>
         </div>
@@ -49,23 +49,24 @@ export default function FeaturedCategories() {
           {categories.map((category, index) => (
             <div
               key={index}
-              className="bg-white rounded-xl  shadow-md p-6 flex flex-col items-center cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-2 hover:scale-105"
+              className="bg-white dark:bg-gray-800 rounded-xl shadow-md dark:shadow-gray-900/40 p-6 flex flex-col items-center cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-2 hover:scale-105"
             >
               <Image
                 src={category.image}
                 alt={category.name}
                 width={150}
                 height={150}
-                className="object-contain "
+                className="object-contain"
               />
 
-              <h3 className="mt-4 text-lg font-semibold text-gray-800">
+              <h3 className="mt-4 text-lg font-semibold text-gray-800 dark:text-white">
                 {category.name}
               </h3>
             </div>
           ))}
 
         </div>
+
       </div>
     </section>
   );

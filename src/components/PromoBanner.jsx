@@ -2,10 +2,10 @@ import Image from "next/image";
 
 export default function PromoBanner() {
   return (
-    <section className="py-16 px-6">
+    <section className="py-16 px-6 bg-white dark:bg-gray-900 transition-colors duration-300">
       <div className="max-w-7xl mx-auto">
 
-        <div className="bg-linear-to-r from-blue-600 via-#461ef8-500 to-[#536cfd] rounded-3xl overflow-hidden shadow-2xl">
+        <div className="bg-gradient-to-r from-blue-600 via-[#461ef8] to-[#536cfd] rounded-3xl overflow-hidden shadow-2xl">
 
           <div className="grid md:grid-cols-2 items-center gap-10 p-8 md:p-14">
 
@@ -28,7 +28,7 @@ export default function PromoBanner() {
                 offer ends.
               </p>
 
-              <button className="mt-8 bg-[lab(100_0_0)] hover:bg-yellow-500 text-black font-semibold px-8 py-4 rounded-xl transition duration-300">
+              <button className="mt-8 bg-white text-black font-semibold px-8 py-4 rounded-xl hover:bg-gray-100 transition duration-300">
                 Shop Now
               </button>
 

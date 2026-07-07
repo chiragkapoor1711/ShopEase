@@ -27,7 +27,10 @@
       transform: translateY(0);
     }
   }
+
+
 }
+@custom-variant dark (&:where(.dark, .dark *));
 
 .animate-float {
   animation: float 3s ease-in-out infinite;
