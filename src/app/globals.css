@@ -15,7 +15,6 @@
 
   --shadow-soft: 0 4px 20px rgba(0,0,0,0.06);
 
-
   @keyframes float {
     0% {
       transform: translateY(0);
@@ -28,10 +27,69 @@
     }
   }
 
+  @keyframes navbar-in {
+    from {
+      transform: translateY(-100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
 
+  @keyframes spin-in {
+    from {
+      transform: rotate(-90deg) scale(0.5);
+      opacity: 0;
+    }
+    to {
+      transform: rotate(0deg) scale(1);
+      opacity: 1;
+    }
+  }
+
+  @keyframes fade-in-down {
+    from {
+      transform: translateY(-6px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes fade-in-up {
+    from {
+      transform: translateY(16px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
 }
+
 @custom-variant dark (&:where(.dark, .dark *));
 
 .animate-float {
   animation: float 3s ease-in-out infinite;
+}
+
+.animate-navbar-in {
+  animation: navbar-in 0.5s ease-out;
+}
+
+.animate-spin-in {
+  animation: spin-in 0.4s ease-out;
+}
+
+.animate-fade-in-down {
+  animation: fade-in-down 0.25s ease-out;
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.5s ease-out forwards;
 }

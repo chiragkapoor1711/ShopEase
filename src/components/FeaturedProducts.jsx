@@ -66,7 +66,7 @@ export default function FeaturedProducts() {
       <div className="max-w-7xl mx-auto px-6">
 
         {/* Heading */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-12 animate-fade-in-up">
           <h2 className="text-4xl font-bold text-gray-900 dark:text-white">
             Featured Products
           </h2>
@@ -79,13 +79,14 @@ export default function FeaturedProducts() {
         {/* Product Grid */}
         <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
 
-          {products.map((product) => (
+          {products.map((product, index) => (
             <div
               key={product.id}
-              className="bg-white dark:bg-gray-800 rounded-2xl shadow-md dark:shadow-gray-900/40 overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-2"
+              style={{ animationDelay: `${index * 80}ms` }}
+              className="group bg-white dark:bg-gray-800 rounded-2xl shadow-md dark:shadow-gray-900/40 overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 animate-fade-in-up opacity-0"
             >
               {/* Product Image */}
-              <div className="h-60 w-full relative flex items-center justify-center bg-gray-50 dark:bg-gray-700">
+              <div className="h-60 w-full relative flex items-center justify-center bg-gray-50 dark:bg-gray-700 overflow-hidden">
                 <Image
                   src={product.image}
                   alt={product.name}
@@ -94,7 +95,7 @@ export default function FeaturedProducts() {
                          (max-width: 768px) 50vw,
                          (max-width: 1024px) 33vw,
                          25vw"
-                  className="object-contain"
+                  className="object-contain transition-transform duration-300 group-hover:scale-110"
                 />
               </div>
 
@@ -122,7 +123,7 @@ export default function FeaturedProducts() {
                 </div>
 
                 {/* Button */}
-                <button className="mt-5 w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg transition">
+                <button className="mt-5 w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg transition-all duration-300 hover:scale-[1.02] active:scale-95">
                   Add to Cart
                 </button>
 
