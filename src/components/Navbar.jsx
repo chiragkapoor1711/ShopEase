@@ -44,20 +44,6 @@ export default function Navbar() {
               About
             </Link>
 
-            <Link
-              href="/login"
-              className="relative text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-300 after:content-[''] after:absolute after:left-0 after:-bottom-1 after:h-0.5 after:w-0 after:bg-blue-600 dark:after:bg-blue-400 after:transition-all after:duration-300 hover:after:w-full"
-            >
-              Login
-            </Link>
-
-            <Link
-              href="/signup"
-              className="relative text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-300 after:content-[''] after:absolute after:left-0 after:-bottom-1 after:h-0.5 after:w-0 after:bg-blue-600 dark:after:bg-blue-400 after:transition-all after:duration-300 hover:after:w-full"
-            >
-              Sign Up
-            </Link>
-
             {/* Dropdown */}
             <div className="relative">
               <button
@@ -89,7 +75,7 @@ export default function Navbar() {
                 </Link>
 
                 <Link
-                  href="/seller"
+                  href="/login"
                   onClick={() => setRoleOpen(false)}
                   className="block px-4 py-2 text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
                 >
@@ -172,21 +158,6 @@ export default function Navbar() {
             >
               About
             </Link>
-            <Link
-              href="/login"
-              onClick={() => setIsOpen(false)}
-              className="block text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-300 hover:translate-x-1"
-            >
-              Login
-            </Link>
-
-            <Link
-              href="/signup"
-              onClick={() => setIsOpen(false)}
-              className="block text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-300 hover:translate-x-1"
-            >
-              Sign Up
-            </Link>
 
             <details>
               <summary className="cursor-pointer text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-300">
@@ -206,7 +177,7 @@ export default function Navbar() {
                 </Link>
 
                 <Link
-                  href="/seller"
+                  href="/login"
                   onClick={() => setRoleOpen(false)}
                   className="block text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-300 hover:translate-x-1"
                 >
