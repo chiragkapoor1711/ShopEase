@@ -61,5 +61,7 @@ export const config = {
     "/dashboard/:path*",
     "/admin/:path*",
     "/seller/:path*",
+    "/profile",
+    "/change-password",
   ],
 };

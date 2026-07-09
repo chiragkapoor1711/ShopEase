@@ -13,6 +13,7 @@ import {
   LayoutDashboard,
   LogOut,
 } from "lucide-react";
+import { User, KeyRound } from "lucide-react";
 
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
@@ -187,6 +188,38 @@ export default function Navbar() {
                     >
                       <LayoutDashboard size={18} />
                       Dashboard
+                    </Link>
+                    <Link
+                      href="/profile"
+                      onClick={() => setProfileOpen(false)}
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                    >
+                      <User size={18} />
+                      My Profile
+                    </Link>
+
+                    <Link
+                      href={
+                        user.role === "admin"
+                          ? "/admin/dashboard"
+                          : user.role === "seller"
+                            ? "/seller/dashboard"
+                            : "/dashboard"
+                      }
+                      onClick={() => setProfileOpen(false)}
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                    >
+                      <LayoutDashboard size={18} />
+                      Dashboard
+                    </Link>
+
+                    <Link
+                      href="/change-password"
+                      onClick={() => setProfileOpen(false)}
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                    >
+                      <KeyRound size={18} />
+                      Change Password
                     </Link>
 
                     <button
