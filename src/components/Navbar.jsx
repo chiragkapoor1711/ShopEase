@@ -1,20 +1,69 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Menu, X, ChevronDown, Moon, Sun } from "lucide-react";
+import toast from "react-hot-toast";
+import {
+  Menu,
+  X,
+  ChevronDown,
+  Moon,
+  Sun,
+  UserCircle,
+  LayoutDashboard,
+  LogOut,
+} from "lucide-react";
+
+import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [roleOpen, setRoleOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
 
+  // user now comes from shared AuthContext instead of a local fetch,
+  // so it updates everywhere the moment login/logout happens — no
+  // manual page refresh required.
+  const { user, setUser } = useAuth();
+
+  const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+
+  const roleRef = useRef(null);
+  const profileRef = useRef(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Close the Role / Profile dropdowns when clicking outside of them
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (roleRef.current && !roleRef.current.contains(event.target)) {
+        setRoleOpen(false);
+      }
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
+        setProfileOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleLogout = async () => {
+    await fetch("/api/auth/logout", {
+      method: "POST",
+    });
+
+    setUser(null); // instantly clears user everywhere via context
+    setProfileOpen(false);
+    toast.success("Logged out successfully.");
+    router.push("/");
+  };
 
   return (
     <nav className="bg-white dark:bg-gray-900 shadow-md sticky top-0 z-50 transition-colors duration-300 animate-navbar-in">
@@ -45,7 +94,7 @@ export default function Navbar() {
             </Link>
 
             {/* Dropdown */}
-            <div className="relative">
+            <div className="relative" ref={roleRef}>
               <button
                 onClick={() => setRoleOpen(!roleOpen)}
                 className="flex items-center gap-1 text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-300"
@@ -101,6 +150,71 @@ export default function Navbar() {
                   )}
                 </span>
               </button>
+            )}
+
+            {/* Auth section — desktop only */}
+            {user ? (
+              <div className="relative" ref={profileRef}>
+                <button
+                  onClick={() => setProfileOpen(!profileOpen)}
+                  className="ml-2"
+                >
+                  <UserCircle
+                    size={34}
+                    className="text-blue-600 dark:text-blue-400 hover:scale-110 transition"
+                  />
+                </button>
+
+                {profileOpen && (
+                  <div className="absolute right-0 mt-3 w-60 bg-white dark:bg-gray-800 rounded-xl shadow-xl border dark:border-gray-700">
+                    <div className="p-4 border-b dark:border-gray-700">
+                      <h3 className="font-semibold dark:text-white">
+                        {user.full_name}
+                      </h3>
+                      <p className="text-sm text-gray-500">{user.email}</p>
+                    </div>
+
+                    <Link
+                      href={
+                        user.role === "admin"
+                          ? "/admin/dashboard"
+                          : user.role === "seller"
+                            ? "/seller/dashboard"
+                            : "/dashboard"
+                      }
+                      onClick={() => setProfileOpen(false)}
+                      className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      <LayoutDashboard size={18} />
+                      Dashboard
+                    </Link>
+
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl  text-red-600 dark:text-red-400 transition-colors duration-200 hover:bg-red-50 dark:hover:bg-red-900/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+                    >
+                      <LogOut size={18} />
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center gap-4">
+                <Link
+                  href="/login"
+                  className="text-gray-700 dark:text-gray-200 hover:text-blue-600"
+                >
+                  Login
+                </Link>
+
+                <Link
+                  href="/signup"
+                  className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700"
+                >
+                  Sign Up
+                </Link>
+              </div>
             )}
           </div>
 
@@ -178,13 +292,62 @@ export default function Navbar() {
 
                 <Link
                   href="/login"
-                  onClick={() => setRoleOpen(false)}
+                  onClick={() => {
+                    setRoleOpen(false);
+                    setIsOpen(false);
+                  }}
                   className="block text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-300 hover:translate-x-1"
                 >
                   Seller
                 </Link>
               </div>
             </details>
+
+            {user ? (
+              <>
+                <Link
+                  href={
+                    user.role === "admin"
+                      ? "/admin/dashboard"
+                      : user.role === "seller"
+                        ? "/seller/dashboard"
+                        : "/dashboard"
+                  }
+                  onClick={() => setIsOpen(false)}
+                  className="block text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-300 hover:translate-x-1"
+                >
+                  Dashboard
+                </Link>
+
+                <button
+                  onClick={() => {
+                    setIsOpen(false);
+                    handleLogout();
+                  }}
+                  className="block text-red-600"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  onClick={() => setIsOpen(false)}
+                  className="block text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-300 hover:translate-x-1"
+                >
+                  Login
+                </Link>
+
+                <Link
+                  href="/signup"
+                  onClick={() => setIsOpen(false)}
+                  className="block text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-300 hover:translate-x-1"
+                >
+                  Sign Up
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>
