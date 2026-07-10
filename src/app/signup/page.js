@@ -32,10 +32,10 @@ export default function Signup() {
 
     setMessage("");
 
-    if (formData.password !== formData.confirmPassword) {
-      setMessage("Passwords do not match.");
-      return;
-    }
+    // if (formData.password !== formData.confirmPassword) {
+    //   setMessage("Passwords do not match.");
+    //   return;
+    // }
 
     try {
       setLoading(true);
@@ -158,7 +158,7 @@ export default function Signup() {
             />
           </div>
 
-          <div>
+          {/* <div>
             <label className="block mb-2 font-medium text-gray-700 dark:text-gray-200">
               Confirm Password
             </label>
@@ -171,7 +171,7 @@ export default function Signup() {
               onChange={handleChange}
               className="w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
             />
-          </div>
+          </div> */}
 
           <button
             type="submit"

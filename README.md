@@ -1,179 +1,259 @@
-# 🛍️ ShopEase
+# 🛒 ShopEase - Modern E-Commerce Platform
 
-A modern, responsive e-commerce homepage built with **Next.js** and **Tailwind CSS**. ShopEase provides a clean and attractive shopping interface with responsive layouts, interactive UI components, and a seamless user experience across all devices.
+ShopEase is a modern full-stack e-commerce web application built with **Next.js**, **MySQL**, and **Tailwind CSS**. It provides a seamless shopping experience for customers while offering dedicated dashboards for administrators and sellers to manage products, categories, orders, customers, and reports.
 
 ---
-
 ## 🚀 Live Demo
 
 **Deployed on Vercel:**
 https://shop-ease-bice-nine.vercel.app/
 
 ---
+## 🚀 Features
 
-## 📸 Features
+### 👤 User
+- User Registration & Login
+- JWT Authentication
+- Secure Cookies
+- Role-Based Access
+- Profile Management
+- Change Password
+- Responsive Design
+- Dark Mode
 
-* ✅ Responsive Navigation Bar
-* ✅ Hero Section with Call-to-Action Buttons
-* ✅ Featured Categories Section
-* ✅ Featured Products Section
-* ✅ Promotional Banner
-* ✅ Why Choose Us Section
-* ✅ Responsive Footer
-* ✅ Modern UI with Hover Animations
-* ✅ Optimized Images using Next.js Image Component
-* ✅ Mobile-Friendly Design
+### 👨‍💼 Admin
+- Separate Admin Login
+- Admin Dashboard
+- Create Seller Account
+- Seller Management
+- Profile Management
+- Change Password
+
+### 🛍 Seller Dashboard
+- Dashboard Overview
+- Categories Management (UI)
+- Products Management (UI)
+- Orders Management (UI)
+- Customers Management (UI)
+- Reports Dashboard (UI)
+- Store Settings (UI)
+- Responsive Seller Panel
+
+### 🌐 Website
+- Home Page
+- About Page
+- Login
+- Signup
+- Forgot Password
+- Custom 404 Page
+- Responsive Navbar
+- Profile Drawer
+- Dark/Light Theme
 
 ---
 
-## 🛠️ Tech Stack
+# 🛠 Tech Stack
 
 ### Frontend
+- Next.js 15/16
+- React.js
+- Tailwind CSS
+- Lucide React Icons
+- React Hot Toast
 
-* Next.js
-* React.js
-* Tailwind CSS
+### Backend
+- Next.js API Routes
+- JWT Authentication
+- bcryptjs
+- MySQL
 
-### Icons
-
-* Lucide React
-
-### Deployment
-
-* Vercel
+### Database
+- MySQL
 
 ---
 
-## 📂 Project Structure
+# 📂 Folder Structure
 
 ```text
-shop-ease/
-│── public/
-│   ├── hero-banner.avif
-│   ├── promo-banner.png
-│   ├── categories/
-│   └── products/
+src/
 │
-│── src/
-│   ├── app/
-│   │   ├── globals.css
-│   │   ├── layout.js
-│   │   └── page.js
-│   │
-│   ├── components/
-│   │   ├── Navbar.jsx
-│   │   ├── Hero.jsx
-│   │   ├── FeaturedCategories.jsx
-│   │   ├── FeaturedProducts.jsx
-│   │   ├── PromoBanner.jsx
-│   │   ├── WhyChooseUs.jsx
-│   │   └── Footer.jsx
+├── app/
+│   ├── api/
+│   ├── admin/
+│   ├── seller/
+│   ├── dashboard/
+│   ├── login/
+│   ├── signup/
+│   ├── about/
+│   ├── profile/
+│   └── change-password/
 │
-│── package.json
-│── README.md
+├── components/
+│   ├── seller/
+│   ├── admin/
+│   ├── Navbar.jsx
+│   ├── Footer.jsx
+│   └── ThemeProvider.jsx
+│
+├── context/
+│
+├── lib/
+│
+└── middleware.js
 ```
 
 ---
 
-## ⚙️ Installation
+# 🔐 Authentication
 
-Clone the repository:
+- JWT Authentication
+- HttpOnly Cookies
+- Protected Routes
+- Role-Based Middleware
+
+Roles Supported
+
+- User
+- Seller
+- Admin
+
+---
+
+# 📊 Seller Dashboard
+
+✔ Dashboard
+
+✔ Categories
+
+✔ Products
+
+✔ Orders
+
+✔ Customers
+
+✔ Reports
+
+✔ Settings
+
+Features
+
+- Responsive Sidebar
+- Summary Cards
+- Search
+- Filter
+- Sort
+- Pagination
+- Delete Confirmation Modal
+- Toast Notifications
+
+---
+
+# 🎨 UI Features
+
+- Fully Responsive
+- Dark Mode
+- Glassmorphism Forms
+- Animated Cards
+- Hover Effects
+- Profile Drawer
+- Modern Dashboard
+- Mobile Friendly
+- Clean UI
+
+---
+
+# 📦 Installation
+
+Clone the repository
 
 ```bash
-git clone https://github.com/your-username/shop-ease.git
+git clone https://github.com/your-username/shopease.git
 ```
 
-Navigate to the project folder:
+Go to project
 
 ```bash
-cd shop-ease
+cd shopease
 ```
 
-Install dependencies:
+Install dependencies
 
 ```bash
 npm install
 ```
 
-Start the development server:
+Run development server
 
 ```bash
 npm run dev
 ```
 
-Open your browser and visit:
+---
 
-```text
-http://localhost:3000
+# ⚙ Environment Variables
+
+Create a `.env.local`
+
+```env
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=your_password
+DB_NAME=shopease
+
+JWT_SECRET=your_secret_key
 ```
 
 ---
 
-## 🏗️ Build for Production
 
-Create a production build:
 
-```bash
-npm run build
-```
+# 🚀 Future Improvements
 
-Run the production server:
-
-```bash
-npm start
-```
-
----
-
-## 📱 Responsive Design
-
-The application is fully responsive and optimized for:
-
-* 📱 Mobile Devices
-* 📱 Tablets
-* 💻 Laptops
-* 🖥️ Desktop Screens
+- Product CRUD
+- Category CRUD
+- Order Management
+- Customer Management
+- Wishlist
+- Cart
+- Checkout
+- Razorpay Integration
+- Stripe Integration
+- Image Upload
+- Email Verification
+- Password Reset via Email
+- Notifications
+- Analytics Dashboard
 
 ---
 
-## 🎨 UI Components
+# 📌 Project Status
 
-* Navigation Bar
-* Hero Section
-* Featured Categories
-* Featured Products
-* Promotional Banner
-* Why Choose Us
-* Footer
+Current Status
 
----
+✅ Authentication
 
-## ✨ Future Enhancements
+✅ Authorization
 
-* User Authentication
-* Shopping Cart
-* Wishlist
-* Product Search
-* Product Filters
-* Product Details Page
-* Checkout System
-* Payment Gateway Integration
-* Admin Dashboard
-* Backend API Integration
+✅ Role Based Dashboard
+
+✅ Seller Dashboard UI
+
+✅ Admin Dashboard
+
+✅ Responsive Design
+
+🚧 Backend CRUD (In Progress)
+
+🚧 Payment Gateway
+
+🚧 Product Management APIs
 
 ---
 
-## 📄 License
-
-This project is developed for learning and portfolio purposes.
-
----
-
-## 👨‍💻 Author
+# 👨‍💻 Author
 
 **Chirag Kapoor**
 
 
----
 
-⭐ If you found this project useful, consider giving it a star on GitHub!
+## ⭐ If you like this project, don't forget to give it a Star!

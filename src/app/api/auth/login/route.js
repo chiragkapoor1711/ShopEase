@@ -27,7 +27,7 @@ export async function POST(request) {
       return NextResponse.json(
         {
           success: false,
-          message: "Invalid email or password.",
+          message: "No account found with this email. Please sign up first..",
         },
         { status: 401 }
       );
@@ -42,11 +42,12 @@ export async function POST(request) {
       return NextResponse.json(
         {
           success: false,
-          message: "Invalid email or password.",
+          message: "The password you entered is incorrect. Please try again.",
         },
         { status: 401 }
       );
     }
+    
 
     // Create JWT
     const token = jwt.sign(

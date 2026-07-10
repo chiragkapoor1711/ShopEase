@@ -11,10 +11,21 @@ export default function RootLayout({ children }) {
       <body>
         <Providers>
           <AuthProvider>
-            <Toaster position="top-center" toastOptions={{ duration: 3000 }} />
+
             <Navbar />
             {children}
             <Footer />
+            <Toaster
+          position="top-right"
+          gutter={10}
+          toastOptions={{
+            duration: 3000,
+          }}
+          containerStyle={{
+            top: 80, // Navbar height + some spacing
+            right: 20,
+          }}
+        />
           </AuthProvider>
         </Providers>
       </body>
