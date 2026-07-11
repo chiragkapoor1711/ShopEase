@@ -63,5 +63,6 @@ export const config = {
     "/seller/:path*",
     "/profile",
     "/change-password",
+    
   ],
 };

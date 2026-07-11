@@ -59,7 +59,14 @@ export default function Login() {
       if (data.user.role === "admin") {
         router.push("/admin/dashboard");
       } else if (data.user.role === "seller") {
-        router.push("/seller/dashboard");
+        const res = await fetch("/api/seller/store");
+        const storeData = await res.json();
+
+        if (res.ok && storeData.storeExists) {
+          router.push("/seller/dashboard");
+        } else {
+          router.push("/seller/store");
+        }
       } else {
         router.push("/dashboard");
       }

@@ -1,66 +1,54 @@
 "use client";
 
-import { TriangleAlert, X } from "lucide-react";
+import { Loader2, TriangleAlert } from "lucide-react";
 
+// Generic delete confirmation modal. Reuse this same component
+// (or rename it something neutral like DeleteConfirmModal) for
+// Products and anything else that needs a delete confirmation,
+// so the whole dashboard has one consistent dialog.
 export default function DeleteModal({
   isOpen,
-  onClose,
-  onDelete,
-  productName,
+  itemName,
+  loading,
+  onCancel,
+  onConfirm,
 }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md p-6 animate-in fade-in zoom-in-95 duration-200">
-        {/* Header */}
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
-              <TriangleAlert className="text-red-600" />
-            </div>
-
-            <h2 className="text-xl font-bold dark:text-white">
-              Delete Product
-            </h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-sm p-6">
+        <div className="flex items-start gap-3">
+          <div className="shrink-0 w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center">
+            <TriangleAlert size={20} />
           </div>
-
-          <button
-            onClick={onClose}
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
-          >
-            <X />
-          </button>
+          <div>
+            <h3 className="font-semibold text-gray-900 dark:text-white">
+              Delete category
+            </h3>
+            <p className="text-sm text-gray-500 mt-1">
+              Are you sure you want to delete{" "}
+              <span className="font-medium">{itemName}</span>? This can't be
+              undone.
+            </p>
+          </div>
         </div>
 
-        {/* Content */}
-
-        <div className="mt-6">
-          <p className="text-gray-600 dark:text-gray-300">
-            Are you sure you want to delete
-            <span className="font-semibold text-red-600"> "{productName}"</span>
-            ?
-          </p>
-
-          <p className="mt-3 text-sm text-gray-500">
-            This action cannot be undone.
-          </p>
-        </div>
-
-        {/* Buttons */}
-        <div className="flex justify-end gap-4 mt-8">
+        <div className="flex justify-end gap-3 mt-6">
           <button
-            onClick={onClose}
-            className="px-5 py-2 rounded-xl border hover:bg-gray-100 dark:hover:bg-gray-800"
+            onClick={onCancel}
+            disabled={loading}
+            className="px-4 py-2 rounded-xl text-sm bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white transition disabled:opacity-60"
           >
             Cancel
           </button>
-
           <button
-            onClick={onDelete}
-            className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white"
+            onClick={onConfirm}
+            disabled={loading}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm bg-red-600 hover:bg-red-700 text-white transition disabled:opacity-60"
           >
-            Delete
+            {loading && <Loader2 size={16} className="animate-spin" />}
+            {loading ? "Deleting..." : "Delete"}
           </button>
         </div>
       </div>

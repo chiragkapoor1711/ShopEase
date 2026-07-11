@@ -1,48 +1,59 @@
 "use client";
 
-import {
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
-export default function Pagination() {
+export default function Pagination({
+  currentPage,
+  totalPages,
+  onPageChange,
+}) {
+  if (totalPages <= 1) return null;
+
   return (
+    <div className="flex flex-wrap justify-between items-center gap-4 mt-8">
 
-    <div className="flex flex-wrap justify-between items-center gap-3 mt-6 sm:mt-8">
+      {/* Previous */}
 
-      <button className="flex items-center gap-1.5 sm:gap-2 border px-3 sm:px-4 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-sm sm:text-base dark:text-white dark:border-gray-700">
-
+      <button
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage === 1}
+        className="flex items-center gap-2 border px-4 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-white dark:border-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
         <ChevronLeft size={18} />
-
-        <span className="hidden sm:inline">Previous</span>
-
+        Previous
       </button>
 
-      <div className="flex gap-1.5 sm:gap-2 order-last sm:order-none w-full sm:w-auto justify-center">
+      {/* Page Numbers */}
 
-        <button className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-blue-600 text-white text-sm sm:text-base">
-          1
-        </button>
+      <div className="flex gap-2">
 
-        <button className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg border text-sm sm:text-base dark:text-white dark:border-gray-700">
-          2
-        </button>
-
-        <button className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg border text-sm sm:text-base dark:text-white dark:border-gray-700">
-          3
-        </button>
+        {Array.from({ length: totalPages }, (_, index) => (
+          <button
+            key={index + 1}
+            onClick={() => onPageChange(index + 1)}
+            className={`w-10 h-10 rounded-lg transition ${
+              currentPage === index + 1
+                ? "bg-blue-600 text-white"
+                : "border dark:border-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+            }`}
+          >
+            {index + 1}
+          </button>
+        ))}
 
       </div>
 
-      <button className="flex items-center gap-1.5 sm:gap-2 border px-3 sm:px-4 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-sm sm:text-base dark:text-white dark:border-gray-700">
+      {/* Next */}
 
-        <span className="hidden sm:inline">Next</span>
-
+      <button
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage === totalPages}
+        className="flex items-center gap-2 border px-4 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-white dark:border-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        Next
         <ChevronRight size={18} />
-
       </button>
 
     </div>
-
   );
 }

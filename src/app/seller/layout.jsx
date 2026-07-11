@@ -9,7 +9,6 @@ export default function SellerLayout({ children }) {
 
   return (
     <div className="flex min-h-screen bg-gray-100 dark:bg-gray-950">
-
       {/* Desktop Sidebar */}
       <aside className="hidden lg:block w-72 border-r bg-white dark:bg-gray-900 dark:border-gray-800">
         <SellerSidebar />
@@ -40,10 +39,8 @@ export default function SellerLayout({ children }) {
 
       {/* Main Content */}
       <main className="flex-1">
-
         {/* Mobile Header */}
         <div className="lg:hidden flex items-center gap-4 p-4 bg-white dark:bg-gray-900 border-b dark:border-gray-800">
-
           <button onClick={() => setSidebarOpen(true)}>
             <Menu className="dark:text-white" />
           </button>
@@ -51,15 +48,13 @@ export default function SellerLayout({ children }) {
           <h2 className="text-xl font-bold dark:text-white">
             Seller Dashboard
           </h2>
-
         </div>
 
+        {/* THIS WAS MISSING */}
         <div className="p-4 md:p-6 lg:p-8">
           {children}
         </div>
-
       </main>
-
     </div>
   );
 }

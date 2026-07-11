@@ -1,181 +1,149 @@
 "use client";
 
-import { useState } from "react";
-import DeleteModal from "./DeleteModal";
 import { Eye, Pencil, Trash2 } from "lucide-react";
 
-const products = [
-  {
-    id: 1,
-    image: "/hero-banner.avif",
-    name: "Wireless Headphones",
-    category: "Electronics",
-    price: "₹2,999",
-    stock: 35,
-    status: "Active",
-  },
-  {
-    id: 2,
-    image: "/hero-banner.avif",
-    name: "Smart Watch",
-    category: "Accessories",
-    price: "₹4,999",
-    stock: 15,
-    status: "Active",
-  },
-  {
-    id: 3,
-    image: "/hero-banner.avif",
-    name: "Gaming Mouse",
-    category: "Electronics",
-    price: "₹1,499",
-    stock: 0,
-    status: "Out of Stock",
-  },
-];
-
-function StatusBadge({ status }) {
-  const styles =
-    status === "Active"
-      ? "bg-green-100 text-green-700"
-      : "bg-red-100 text-red-700";
+function StatusBadge({ status, stock }) {
+  let classes = "";
+  if (stock <= 0) {
+    status = "Out of Stock";
+    classes = "bg-red-100 text-red-700";
+  } else if (status === "Active") {
+    classes = "bg-green-100 text-green-700";
+  } else {
+    classes = "bg-gray-100 text-gray-700";
+  }
   return (
-    <span className={`${styles} px-3 py-1 rounded-full text-xs sm:text-sm whitespace-nowrap`}>
+    <span
+      className={`${classes} px-3 py-1 rounded-full text-xs font-medium`}
+    >
       {status}
     </span>
   );
 }
 
-export default function ProductTable() {
-  const [open, setOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState(null);
-
+export default function ProductTable({
+  products,
+  onEdit,
+  onDelete,
+}) {
   return (
     <>
-      <div className="bg-white dark:bg-gray-900 rounded-xl sm:rounded-2xl shadow-xl p-4 sm:p-6 mt-6 sm:mt-8 max-w-full overflow-x-hidden">
+      <div className="hidden md:block overflow-x-auto rounded-xl border dark:border-gray-700">
 
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-0 mb-5 sm:mb-6">
+        <table className="w-full">
 
-          <h2 className="text-lg sm:text-xl lg:text-2xl font-bold dark:text-white">
-            Product List
-          </h2>
+          <thead className="bg-gray-100 dark:bg-gray-800">
 
-          <span className="text-xs sm:text-sm text-gray-500">
-            Total Products: {products.length}
-          </span>
+            <tr>
 
-        </div>
+              <th className="text-left p-4">Image</th>
 
-        {/* Mobile/tablet: stacked cards (no horizontal scroll) */}
-        <div className="md:hidden space-y-3">
-          {products.map((product) => (
-            <div
-              key={product.id}
-              className="border dark:border-gray-800 rounded-xl p-3 flex gap-3"
-            >
-              <img
-                src={product.image}
-                alt={product.name}
-                className="w-16 h-16 rounded-lg object-cover shrink-0"
-              />
+              <th className="text-left p-4">Product</th>
 
-              <div className="min-w-0 flex-1">
-                <div className="flex items-start justify-between gap-2">
-                  <p className="font-medium dark:text-white truncate">{product.name}</p>
-                  <StatusBadge status={product.status} />
-                </div>
-                <p className="text-sm text-gray-500 mt-0.5 truncate">
-                  {product.category} • {product.price} • Stock: {product.stock}
-                </p>
+              <th className="text-left p-4">Category</th>
 
-                <div className="flex justify-end gap-3 mt-2">
-                  <button className="text-blue-600 hover:scale-110">
-                    <Eye size={16} />
-                  </button>
-                  <button className="text-yellow-500 hover:scale-110">
-                    <Pencil size={16} />
-                  </button>
-                  <button
-                    onClick={() => {
-                      setSelectedProduct(product);
-                      setOpen(true);
-                    }}
-                    className="text-red-600 hover:scale-110"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+              <th className="text-left p-4">Brand</th>
 
-        {/* Desktop/tablet-landscape: table */}
-        <div className="hidden md:block overflow-x-auto">
+              <th className="text-left p-4">Price</th>
 
-          <table className="w-full">
+              <th className="text-left p-4">Stock</th>
 
-            <thead>
-              <tr className="border-b dark:border-gray-700">
-                <th className="text-left py-4">Image</th>
-                <th className="text-left py-4">Product</th>
-                <th className="text-left py-4">Category</th>
-                <th className="text-left py-4">Price</th>
-                <th className="text-left py-4">Stock</th>
-                <th className="text-left py-4">Status</th>
-                <th className="text-center py-4">Actions</th>
+              <th className="text-left p-4">Status</th>
+
+              <th className="text-center p-4">Actions</th>
+
+            </tr>
+
+          </thead>
+
+          <tbody>
+
+            {products?.length === 0 ? (
+
+              <tr>
+
+                <td
+                  colSpan="8"
+                  className="text-center py-10 text-gray-500"
+                >
+                  No products available. Click "Add Product" to create your first product.
+                </td>
+
               </tr>
-            </thead>
 
-            <tbody>
+            ) : (
 
-              {products.map((product) => (
+              products?.map((product) => (
 
                 <tr
                   key={product.id}
-                  className="border-b dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+                  className="border-t dark:border-gray-700"
                 >
 
-                  <td className="py-4">
+                  <td className="p-4">
+
                     <img
-                      src={product.image}
-                      alt={product.name}
+                      src={
+                        product.product_image
+                          ? product.product_image
+                          : "/uploads/no-image.png"
+                      }
+                      alt={product.product_name}
                       className="w-16 h-16 rounded-lg object-cover"
                     />
+
                   </td>
 
-                  <td className="font-medium dark:text-white">
-                    {product.name}
+                  <td className="p-4 font-medium">
+                    {product.product_name}
                   </td>
 
-                  <td className="dark:text-gray-200">{product.category}</td>
-
-                  <td className="dark:text-gray-200">{product.price}</td>
-
-                  <td className="dark:text-gray-200">{product.stock}</td>
-
-                  <td>
-                    <StatusBadge status={product.status} />
+                  <td className="p-4">
+                    {product.category_name}
                   </td>
 
-                  <td>
+                  <td className="p-4">
+                    {product.brand || "N/A"}
+                  </td>
+
+                  <td className="p-4">
+                    ₹{Number(product.price).toLocaleString("en-IN")}
+                  </td>
+
+                  <td className="p-4">
+                    {product.stock}
+                  </td>
+
+                  <td className="p-4">
+
+                    <StatusBadge
+                      status={product.status}
+                      stock={product.stock}
+                    />
+
+                  </td>
+
+                  <td className="p-4">
 
                     <div className="flex justify-center gap-3">
 
-                      <button className="text-blue-600 hover:scale-110">
+                      <button
+                        disabled
+                        className="text-blue-600 opacity-50 cursor-not-allowed"
+                      >
                         <Eye size={18} />
                       </button>
 
-                      <button className="text-yellow-500 hover:scale-110">
+                      <button
+                        onClick={() => onEdit(product)}
+                        className="text-yellow-500"
+                      >
                         <Pencil size={18} />
                       </button>
 
                       <button
-                        onClick={() => {
-                          setSelectedProduct(product);
-                          setOpen(true);
-                        }}
-                        className="text-red-600 hover:scale-110"
+                        onClick={() => onDelete(product)}
+                        className="text-red-600"
                       >
                         <Trash2 size={18} />
                       </button>
@@ -186,25 +154,109 @@ export default function ProductTable() {
 
                 </tr>
 
-              ))}
+              ))
 
-            </tbody>
+            )}
 
-          </table>
+          </tbody>
 
-        </div>
+        </table>
 
       </div>
 
-      <DeleteModal
-        isOpen={open}
-        productName={selectedProduct?.name}
-        onClose={() => setOpen(false)}
-        onDelete={() => {
-          console.log("Delete Product");
-          setOpen(false);
-        }}
-      />
+      {/* Mobile Cards */}
+
+      <div className="space-y-4 md:hidden">
+
+        {products?.length === 0 && (
+
+          <div className="text-center py-8 text-gray-500">
+            No products available. Click "Add Product" to create your first product.
+          </div>
+
+        )}
+
+        {products?.map((product) => (
+
+          <div
+            key={product.id}
+            className="bg-white dark:bg-gray-900 rounded-xl shadow p-4"
+          >
+
+            <div className="flex gap-4">
+
+              <img
+                src={
+                  product.product_image
+                    ? product.product_image
+                    : "/uploads/no-image.png"
+                }
+                alt={product.product_name}
+                className="w-20 h-20 rounded-lg object-cover"
+              />
+
+              <div className="flex-1">
+
+                <h3 className="font-semibold">
+                  {product.product_name}
+                </h3>
+
+                <p className="text-sm text-gray-500">
+                  {product.category_name}
+                </p>
+
+                <p className="mt-2">
+                  ₹{Number(product.price).toLocaleString("en-IN")}
+                </p>
+
+                <p className="text-sm">
+                  Stock : {product.stock}
+                </p>
+
+                <div className="mt-2">
+
+                  <StatusBadge
+                    status={product.status}
+                    stock={product.stock}
+                  />
+
+                </div>
+
+                <div className="flex gap-4 mt-4">
+
+                  <button
+                    disabled
+                    className="text-blue-600 opacity-50 cursor-not-allowed"
+                  >
+                    <Eye size={18} />
+                  </button>
+
+                  <button
+                    onClick={() => onEdit(product)}
+                    className="text-yellow-500"
+                  >
+                    <Pencil size={18} />
+                  </button>
+
+                  <button
+                    onClick={() => onDelete(product)}
+                    className="text-red-600"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        ))}
+
+      </div>
+
     </>
   );
 }
