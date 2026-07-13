@@ -162,9 +162,14 @@ export default function ProductsPage() {
   return (
     <div>
 
-      <h1 className="text-3xl font-bold dark:text-white mb-8">
-        Products
-      </h1>
+      <div className="mb-6 sm:mb-8">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold dark:text-white">
+            Products
+          </h1>
+          <p className="text-gray-500 mt-1 sm:mt-2 text-sm sm:text-base">
+            Create and manage products.
+          </p>
+        </div>
 
       <ProductForm
         editingProduct={editingProduct}

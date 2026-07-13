@@ -27,12 +27,13 @@ export default async function ProtectedSellerLayout({ children }) {
   }
 
   // Check if seller has created a store
-  const [stores] = await db.query(
-    "SELECT id FROM stores WHERE seller_id = ?",
-    [decoded.id]
-  );
+  const [stores] = await db.query("SELECT id FROM stores WHERE seller_id = ?", [
+    decoded.id,
+  ]);
 
-  // No store → redirect to Create Store page
+  // Allow the create-store page itself
+  // (Not needed if this layout only wraps (protected) routes)
+
   if (stores.length === 0) {
     redirect("/seller/store");
   }

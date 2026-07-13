@@ -133,7 +133,7 @@ export default function Navbar() {
                   </Link>
 
                   <Link
-                    href="/login"
+                    href="/sellerlogin"
                     onClick={() => setRoleOpen(false)}
                     className="block px-4 py-2 text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
                   >
@@ -276,7 +276,7 @@ export default function Navbar() {
                   </Link>
 
                   <Link
-                    href="/login"
+                    href="/sellerlogin"
                     onClick={() => {
                       setRoleOpen(false);
                       setIsOpen(false);
@@ -285,6 +285,8 @@ export default function Navbar() {
                   >
                     Seller
                   </Link>
+
+                  
                 </div>
               </details>
 

@@ -138,3 +138,99 @@ export async function GET() {
     );
   }
 }
+
+// ==============================
+// UPDATE STORE
+// ==============================
+
+export async function PUT(request) {
+  try {
+    const cookieStore = await cookies();
+
+    const token = cookieStore.get("token")?.value;
+
+    if (!token) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Unauthorized",
+        },
+        { status: 401 }
+      );
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    if (decoded.role !== "seller") {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Access denied.",
+        },
+        { status: 403 }
+      );
+    }
+
+    const {
+      store_name,
+      description,
+      address,
+      phone,
+      email,
+      gst_number,
+      store_logo,
+    } = await request.json();
+
+    const [result] = await db.query(
+      `
+      UPDATE stores
+      SET
+        store_name = ?,
+        description = ?,
+        address = ?,
+        phone = ?,
+        email = ?,
+        gst_number = ?,
+        store_logo = ?,
+        updated_at = NOW()
+      WHERE seller_id = ?
+      `,
+      [
+        store_name,
+        description,
+        address,
+        phone,
+        email,
+        gst_number,
+        store_logo || "",
+        decoded.id,
+      ]
+    );
+
+    if (result.affectedRows === 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Store not found.",
+        },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: "Store updated successfully.",
+    });
+
+  } catch (error) {
+    console.log(error);
+
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Internal Server Error",
+      },
+      { status: 500 }
+    );
+  }
+}

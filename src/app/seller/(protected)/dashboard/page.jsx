@@ -4,25 +4,13 @@ import {
   FolderTree,
   Package,
   ShoppingCart,
+  Users,
   IndianRupee,
+  Wallet,
+  Truck,
+  CheckCircle,
 } from "lucide-react";
-
-const stats = [
-  { title: "Total Categories", value: 12, icon: FolderTree, color: "bg-blue-500" },
-  { title: "Total Products", value: 248, icon: Package, color: "bg-green-500" },
-  { title: "Total Orders", value: 86, icon: ShoppingCart, color: "bg-orange-500" },
-  { title: "Total Revenue", value: "₹1,25,000", icon: IndianRupee, color: "bg-purple-500" },
-];
-
-const recentProducts = [
-  { name: "Wireless Headphones", category: "Electronics", price: "₹2,999", stock: 45, status: "Active" },
-  { name: "Smart Watch", category: "Accessories", price: "₹4,999", stock: 22, status: "Active" },
-];
-
-const recentOrders = [
-  { id: "#1001", customer: "Bhagya Anand", amount: "₹4,999", status: "Processing" },
-  { id: "#1002", customer: "Chirag Kapoor", amount: "₹2,999", status: "Delivered" },
-];
+import { useState, useEffect } from "react";
 
 function StatusBadge({ status }) {
   const styles =
@@ -37,6 +25,101 @@ function StatusBadge({ status }) {
 }
 
 export default function SellerDashboard() {
+  const [dashboard, setDashboard] = useState({
+    totalProducts: 0,
+    totalCategories: 0,
+    totalOrders: 0,
+    totalCustomers: 0,
+    pendingOrders: 0,
+    deliveredOrders: 0,
+    todayRevenue: 0,
+    monthlyRevenue: 0,
+  });
+
+  const [recentProducts, setRecentProducts] = useState([]);
+  const [recentOrders, setRecentOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  async function fetchDashboard() {
+    try {
+      setLoading(true);
+
+      const res = await fetch("/api/seller/dashboard", {
+        credentials: "include",
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.message);
+      }
+
+      setDashboard(data.dashboard);
+      setRecentOrders(data.recentOrders);
+      setRecentProducts(data.lowStockProducts);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    fetchDashboard();
+  }, []);
+
+  // 8 summary cards instead of 4
+  const stats = [
+    {
+      title: "Total Products",
+      value: dashboard.totalProducts,
+      icon: Package,
+      color: "bg-green-500",
+    },
+    {
+      title: "Total Categories",
+      value: dashboard.totalCategories,
+      icon: FolderTree,
+      color: "bg-blue-500",
+    },
+    {
+      title: "Total Orders",
+      value: dashboard.totalOrders,
+      icon: ShoppingCart,
+      color: "bg-orange-500",
+    },
+    {
+      title: "Total Customers",
+      value: dashboard.totalCustomers,
+      icon: Users,
+      color: "bg-pink-500",
+    },
+    {
+      title: "Today Revenue",
+      value: `₹${Number(dashboard.todayRevenue).toLocaleString("en-IN")}`,
+      icon: IndianRupee,
+      color: "bg-emerald-500",
+    },
+    {
+      title: "Monthly Revenue",
+      value: `₹${Number(dashboard.monthlyRevenue).toLocaleString("en-IN")}`,
+      icon: Wallet,
+      color: "bg-purple-500",
+    },
+    {
+      title: "Pending Orders",
+      value: dashboard.pendingOrders,
+      icon: Truck,
+      color: "bg-yellow-500",
+    },
+    {
+      title: "Delivered Orders",
+      value: dashboard.deliveredOrders,
+      icon: CheckCircle,
+      color: "bg-teal-500",
+    },
+  ];
+
   return (
     <div className="flex min-h-screen bg-gray-100 dark:bg-gray-950">
       <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-full overflow-x-hidden">
@@ -66,7 +149,7 @@ export default function SellerDashboard() {
                       {item.title}
                     </p>
                     <h2 className="text-lg sm:text-2xl lg:text-3xl font-bold mt-1 sm:mt-2 dark:text-white truncate">
-                      {item.value}
+                      {loading ? "..." : item.value}
                     </h2>
                   </div>
                   <div
@@ -80,26 +163,26 @@ export default function SellerDashboard() {
           })}
         </div>
 
-        {/* Recent Products */}
+        {/* Low Stock Products */}
         <div className="mt-6 sm:mt-8 lg:mt-10 bg-white dark:bg-gray-900 rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6">
           <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold mb-4 sm:mb-6 dark:text-white">
-            Recent Products
+            Low Stock Products
           </h2>
 
-          {/* Mobile/tablet: stacked cards (no horizontal scroll) */}
+          {/* Mobile/tablet: stacked cards */}
           <div className="md:hidden space-y-3">
             {recentProducts.map((p) => (
               <div
-                key={p.name}
+                key={p.id}
                 className="border dark:border-gray-800 rounded-xl p-3 flex items-center justify-between gap-3"
               >
                 <div className="min-w-0">
-                  <p className="font-medium dark:text-white truncate">{p.name}</p>
+                  <p className="font-medium dark:text-white truncate">{p.product_name}</p>
                   <p className="text-sm text-gray-500 truncate">
-                    {p.category} • {p.price} • Stock: {p.stock}
+                    Stock: {p.stock}
                   </p>
                 </div>
-                <StatusBadge status={p.status} />
+                <StatusBadge status={p.stock > 0 ? "Active" : "Out of Stock"} />
               </div>
             ))}
           </div>
@@ -110,8 +193,6 @@ export default function SellerDashboard() {
               <thead>
                 <tr className="border-b dark:border-gray-700">
                   <th className="text-left py-3 whitespace-nowrap">Product</th>
-                  <th className="text-left py-3 whitespace-nowrap">Category</th>
-                  <th className="text-left py-3 whitespace-nowrap">Price</th>
                   <th className="text-left py-3 whitespace-nowrap">Stock</th>
                   <th className="text-left py-3 whitespace-nowrap">Status</th>
                 </tr>
@@ -119,14 +200,12 @@ export default function SellerDashboard() {
               <tbody>
                 {recentProducts.map((p, i) => (
                   <tr
-                    key={p.name}
+                    key={p.id}
                     className={i !== recentProducts.length - 1 ? "border-b dark:border-gray-800" : ""}
                   >
-                    <td className="py-4 dark:text-gray-200">{p.name}</td>
-                    <td className="dark:text-gray-200">{p.category}</td>
-                    <td className="dark:text-gray-200">{p.price}</td>
+                    <td className="py-4 dark:text-gray-200">{p.product_name}</td>
                     <td className="dark:text-gray-200">{p.stock}</td>
-                    <td><StatusBadge status={p.status} /></td>
+                    <td><StatusBadge status={p.stock > 0 ? "Active" : "Out of Stock"} /></td>
                   </tr>
                 ))}
               </tbody>
@@ -148,10 +227,12 @@ export default function SellerDashboard() {
                 className="border dark:border-gray-800 rounded-xl p-3 flex items-center justify-between gap-3"
               >
                 <div className="min-w-0">
-                  <p className="font-medium dark:text-white truncate">{o.id} • {o.customer}</p>
-                  <p className="text-sm text-gray-500 truncate">{o.amount}</p>
+                  <p className="font-medium dark:text-white truncate">{o.order_number} • {o.full_name}</p>
+                  <p className="text-sm text-gray-500 truncate">
+                    ₹{Number(o.total_amount).toLocaleString("en-IN")}
+                  </p>
                 </div>
-                <StatusBadge status={o.status} />
+                <StatusBadge status={o.order_status} />
               </div>
             ))}
           </div>
@@ -173,10 +254,10 @@ export default function SellerDashboard() {
                     key={o.id}
                     className={i !== recentOrders.length - 1 ? "border-b dark:border-gray-800" : ""}
                   >
-                    <td className="py-4 dark:text-gray-200">{o.id}</td>
-                    <td className="dark:text-gray-200">{o.customer}</td>
-                    <td className="dark:text-gray-200">{o.amount}</td>
-                    <td><StatusBadge status={o.status} /></td>
+                    <td className="py-4 dark:text-gray-200">{o.order_number}</td>
+                    <td className="dark:text-gray-200">{o.full_name}</td>
+                    <td className="dark:text-gray-200">₹{Number(o.total_amount).toLocaleString("en-IN")}</td>
+                    <td><StatusBadge status={o.order_status} /></td>
                   </tr>
                 ))}
               </tbody>
