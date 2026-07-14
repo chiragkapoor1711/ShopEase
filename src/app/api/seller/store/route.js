@@ -33,6 +33,7 @@ export async function POST(request) {
 
     const {
       store_name,
+      store_logo,
       description,
       address,
       phone,
@@ -59,11 +60,12 @@ export async function POST(request) {
     // Create Store
     await db.query(
       `INSERT INTO stores
-      (seller_id, store_name, description, address, phone, email, gst_number)
-      VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      (seller_id, store_name,store_logo,description, address, phone, email, gst_number)
+      VALUES (?, ?, ?, ?, ?, ?, ?,?)`,
       [
         decoded.id,
         store_name,
+        store_logo || "",
         description,
         address,
         phone,
@@ -173,12 +175,12 @@ export async function PUT(request) {
 
     const {
       store_name,
+      store_logo,
       description,
       address,
       phone,
       email,
       gst_number,
-      store_logo,
     } = await request.json();
 
     const [result] = await db.query(
@@ -186,23 +188,23 @@ export async function PUT(request) {
       UPDATE stores
       SET
         store_name = ?,
+        store_logo = ?,
         description = ?,
         address = ?,
         phone = ?,
         email = ?,
         gst_number = ?,
-        store_logo = ?,
         updated_at = NOW()
       WHERE seller_id = ?
       `,
       [
-        store_name,
+        store_name, 
+        store_logo || "",
         description,
         address,
         phone,
         email,
         gst_number,
-        store_logo || "",
         decoded.id,
       ]
     );

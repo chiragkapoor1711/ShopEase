@@ -1,256 +1,207 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import toast from "react-hot-toast";
+import Image from "next/image";
 
-import { Store, Upload, Save, Loader2 } from "lucide-react";
+export default function StoreForm({ initialData = null }) {
+  const [formData, setFormData] = useState({
+    store_name: initialData?.store_name || "",
+    description: initialData?.description || "",
+    address: initialData?.address || "",
+    phone: initialData?.phone || "",
+    email: initialData?.email || "",
+    gst_number: initialData?.gst_number || "",
+  });
 
-export default function StorePage() {
-  const router = useRouter();
-
-  const initialForm = {
-    store_name: "",
-    description: "",
-    address: "",
-    phone: "",
-    email: "",
-    gst_number: "",
-    store_logo: "",
-  };
-
-  const [formData, setFormData] = useState(initialForm);
-  const [imagePreview, setImagePreview] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [storeLogo, setStoreLogo] = useState(initialData?.store_logo || "");
+  const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
 
   function handleChange(e) {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   }
 
-  async function handleImageChange(e) {
-    const file = e.target.files[0];
+  // Step 1: upload file immediately on selection, store the returned URL
+  async function handleFileChange(e) {
+    const file = e.target.files?.[0];
     if (!file) return;
 
-    setImagePreview(URL.createObjectURL(file));
-
-    const body = new FormData();
-    body.append("file", file);
+    setUploading(true);
+    setMessage("");
 
     try {
+      const uploadData = new FormData();
+      uploadData.append("file", file);
+
       const res = await fetch("/api/seller/upload", {
         method: "POST",
-        body,
+        body: uploadData,
       });
 
       const data = await res.json();
 
-      if (!res.ok || !data.success) {
-        throw new Error(data.message);
+      if (data.success) {
+        setStoreLogo(data.imageUrl); // <-- critical: save returned URL to state
+      } else {
+        setMessage(data.message || "Upload failed.");
       }
-
-      setFormData((prev) => ({
-        ...prev,
-        store_logo: data.imageUrl,
-      }));
-
-      toast.success("Logo uploaded successfully.");
     } catch (error) {
-      toast.error(error.message);
+      console.error(error);
+      setMessage("Upload failed.");
+    } finally {
+      setUploading(false);
     }
   }
 
+  // Step 2: submit form INCLUDING store_logo from state
   async function handleSubmit(e) {
     e.preventDefault();
+    setSaving(true);
+    setMessage("");
 
     try {
-      setLoading(true);
-
       const res = await fetch("/api/seller/store", {
-        method: "POST",
+        method: initialData ? "PUT" : "POST",
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          store_logo: storeLogo,
+        }),
       });
 
       const data = await res.json();
+      setMessage(data.message);
 
-      if (!res.ok || !data.success) {
-        throw new Error(data.message);
+      if (!data.success) {
+        console.error(data.message);
       }
-
-      toast.success(data.message);
-      router.push("/seller/dashboard");
     } catch (error) {
-      toast.error(error.message);
+      console.error(error);
+      setMessage("Something went wrong.");
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-950 py-10 px-4">
-      <div className="max-w-5xl mx-auto bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-6 md:p-10">
-        {/* Header */}
-        <div className="mb-10">
-          <h1 className="text-3xl font-bold dark:text-white">
-            Create Your Store
-          </h1>
-          <p className="mt-2 text-gray-500">
-            Complete your store profile before selling products.
-          </p>
+    <form onSubmit={handleSubmit} className="max-w-xl mx-auto space-y-5">
+      <h2 className="text-2xl font-bold dark:text-white">
+        {initialData ? "Update Store" : "Create Store"}
+      </h2>
+
+      {message && (
+        <p className="text-sm text-blue-600 dark:text-blue-400">{message}</p>
+      )}
+
+      {/* Logo preview + upload */}
+      <div>
+        <label className="block mb-2 font-medium dark:text-white">
+          Store Logo
+        </label>
+
+        <div className="h-32 w-32 relative bg-gray-100 rounded-xl overflow-hidden mb-3">
+          <Image
+            src={storeLogo || "/uploads/no-image.png"}
+            alt="Store logo preview"
+            fill
+            className="object-cover"
+          />
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Store Logo */}
-          <div className="flex flex-col items-center">
-            <div className="w-36 h-36 rounded-full border-4 border-blue-100 overflow-hidden bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-              {imagePreview ? (
-                <img
-                  src={imagePreview}
-                  alt="Store Logo"
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <Store size={60} className="text-blue-600" />
-              )}
-            </div>
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleFileChange}
+          disabled={uploading}
+        />
 
-            <label className="mt-5 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-xl flex items-center gap-2 transition">
-              <Upload size={18} />
-              Upload Store Logo
-              <input
-                type="file"
-                hidden
-                accept="image/*"
-                onChange={handleImageChange}
-              />
-            </label>
-          </div>
-
-          {/* Store Details */}
-          <div className="grid md:grid-cols-2 gap-6">
-            {/* Store Name */}
-            <div>
-              <label className="font-medium dark:text-white">
-                Store Name *
-              </label>
-              <input
-                type="text"
-                name="store_name"
-                value={formData.store_name}
-                onChange={handleChange}
-                placeholder="Kapoor Electronics"
-                required
-                className="w-full mt-2 border rounded-xl p-3 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
-              />
-            </div>
-
-            {/* Email */}
-            <div>
-              <label className="font-medium dark:text-white">
-                Store Email *
-              </label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                placeholder="store@gmail.com"
-                required
-                className="w-full mt-2 border rounded-xl p-3 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
-              />
-            </div>
-
-            {/* Phone */}
-            <div>
-              <label className="font-medium dark:text-white">
-                Store Phone *
-              </label>
-              <input
-                type="text"
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-                placeholder="9876543210"
-                required
-                className="w-full mt-2 border rounded-xl p-3 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
-              />
-            </div>
-
-            {/* GST */}
-            <div>
-              <label className="font-medium dark:text-white">
-                GST Number
-              </label>
-              <input
-                type="text"
-                name="gst_number"
-                value={formData.gst_number}
-                onChange={handleChange}
-                placeholder="22AAAAA0000A1Z5"
-                className="w-full mt-2 border rounded-xl p-3 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
-              />
-            </div>
-
-            {/* Store Address */}
-            <div className="md:col-span-2">
-              <label className="font-medium dark:text-white">
-                Store Address *
-              </label>
-              <textarea
-                name="address"
-                value={formData.address}
-                onChange={handleChange}
-                rows="4"
-                required
-                placeholder="Enter your complete store address..."
-                className="w-full mt-2 border rounded-xl p-3 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
-              />
-            </div>
-
-            {/* Description */}
-            <div className="md:col-span-2">
-              <label className="font-medium dark:text-white">
-                Store Description
-              </label>
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                rows="5"
-                placeholder="Tell customers about your store..."
-                className="w-full mt-2 border rounded-xl p-3 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
-              />
-            </div>
-          </div>
-
-          {/* Buttons */}
-          <div className="flex justify-end pt-4">
-            <button
-              type="submit"
-              disabled={loading}
-              className="bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white px-8 py-3 rounded-xl flex items-center gap-2 transition"
-            >
-              {loading ? (
-                <>
-                  <Loader2 size={18} className="animate-spin" />
-                  Creating Store...
-                </>
-              ) : (
-                <>
-                  <Save size={18} />
-                  Create Store
-                </>
-              )}
-            </button>
-          </div>
-        </form>
+        {uploading && (
+          <p className="text-sm text-gray-500 mt-1">Uploading...</p>
+        )}
       </div>
-    </div>
+
+      <div>
+        <label className="block mb-1 font-medium dark:text-white">
+          Store Name
+        </label>
+        <input
+          name="store_name"
+          value={formData.store_name}
+          onChange={handleChange}
+          className="w-full border rounded-lg px-3 py-2"
+          required
+        />
+      </div>
+
+      <div>
+        <label className="block mb-1 font-medium dark:text-white">
+          Description
+        </label>
+        <textarea
+          name="description"
+          value={formData.description}
+          onChange={handleChange}
+          className="w-full border rounded-lg px-3 py-2"
+          rows={3}
+        />
+      </div>
+
+      <div>
+        <label className="block mb-1 font-medium dark:text-white">
+          Address
+        </label>
+        <input
+          name="address"
+          value={formData.address}
+          onChange={handleChange}
+          className="w-full border rounded-lg px-3 py-2"
+        />
+      </div>
+
+      <div>
+        <label className="block mb-1 font-medium dark:text-white">Phone</label>
+        <input
+          name="phone"
+          value={formData.phone}
+          onChange={handleChange}
+          className="w-full border rounded-lg px-3 py-2"
+        />
+      </div>
+
+      <div>
+        <label className="block mb-1 font-medium dark:text-white">Email</label>
+        <input
+          type="email"
+          name="email"
+          value={formData.email}
+          onChange={handleChange}
+          className="w-full border rounded-lg px-3 py-2"
+        />
+      </div>
+
+      <div>
+        <label className="block mb-1 font-medium dark:text-white">
+          GST Number
+        </label>
+        <input
+          name="gst_number"
+          value={formData.gst_number}
+          onChange={handleChange}
+          className="w-full border rounded-lg px-3 py-2"
+        />
+      </div>
+
+      <button
+        type="submit"
+        disabled={saving || uploading}
+        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white py-3 rounded-xl transition"
+      >
+        {saving ? "Saving..." : initialData ? "Update Store" : "Create Store"}
+      </button>
+    </form>
   );
 }
