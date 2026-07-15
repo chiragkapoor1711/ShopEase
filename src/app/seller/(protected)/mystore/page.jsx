@@ -84,14 +84,32 @@ export default function SettingsPage() {
     setImagePreview(URL.createObjectURL(file)); // local preview only
   }
 
-  async function handleSubmit() {
+  async function handleSubmit(e) {
+    e.preventDefault();
+
     try {
       setSaving(true);
 
-      // NOTE: this PUT only sends text fields. If storeLogo holds a new File,
-      // you'll want to upload it first (e.g. to /api/seller/store/logo or
-      // a storage bucket) and put the returned URL into formData.store_logo
-      // before this call — file uploads can't go in a JSON body as-is.
+      let logoUrl = formData.store_logo;
+
+      // Upload new logo if selected
+      if (storeLogo) {
+        const uploadData = new FormData();
+        uploadData.append("file", storeLogo);
+
+        const uploadRes = await fetch("/api/seller/upload", {
+          method: "POST",
+          body: uploadData,
+        });
+
+        const uploadResult = await uploadRes.json();
+
+        if (!uploadResult.success) {
+          throw new Error(uploadResult.message);
+        }
+
+        logoUrl = uploadResult.imageUrl;
+      }
 
       const res = await fetch("/api/seller/store", {
         method: "PUT",
@@ -99,16 +117,22 @@ export default function SettingsPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          store_logo: logoUrl,
+        }),
       });
 
       const data = await res.json();
 
-      if (!res.ok || !data.success) {
+      if (!data.success) {
         throw new Error(data.message);
       }
 
-      toast.success(data.message);
+      toast.success("Store updated successfully.");
+
+      // Refresh latest store data
+      fetchStore();
     } catch (error) {
       toast.error(error.message);
     } finally {
@@ -153,13 +177,18 @@ export default function SettingsPage() {
             </h2>
 
             <p className="text-gray-500 mt-2 text-center">
-              {formData.owner_name ? `${formData.owner_name} · Seller Profile` : "Seller Profile"}
+              {formData.owner_name
+                ? `${formData.owner_name} · Seller Profile`
+                : "Seller Profile"}
             </p>
           </div>
         </div>
 
         {/* Form */}
-        <div className="lg:col-span-2 bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-8">
+        <form
+          onSubmit={handleSubmit}
+          className="lg:col-span-2 bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-8"
+        >
           <h2 className="text-2xl font-bold dark:text-white mb-8">
             Store Information
           </h2>
@@ -277,7 +306,7 @@ export default function SettingsPage() {
           {/* Buttons */}
           <div className="flex gap-4 mt-8">
             <button
-              onClick={handleSubmit}
+              type="submit"
               disabled={saving || loading}
               className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white px-6 py-3 rounded-xl transition"
             >
@@ -286,6 +315,7 @@ export default function SettingsPage() {
             </button>
 
             <button
+              type="button"
               onClick={fetchStore}
               disabled={saving || loading}
               className="flex items-center gap-2 bg-gray-300 dark:bg-gray-700 dark:text-white hover:bg-gray-400 disabled:opacity-60 px-6 py-3 rounded-xl transition"
@@ -294,7 +324,7 @@ export default function SettingsPage() {
               Reset
             </button>
           </div>
-        </div>
+        </form>
       </div>
     </div>
   );

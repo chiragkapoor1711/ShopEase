@@ -3,7 +3,7 @@ import db from "@/lib/db";
 
 export async function GET(request, { params }) {
   try {
-    const { id: categoryId } = await params;
+    const { id } = await params;
 
     const [vendors] = await db.query(
       `
@@ -14,22 +14,27 @@ export async function GET(request, { params }) {
         s.description,
         s.address,
         COUNT(p.id) AS product_count
+
       FROM stores s
+
       INNER JOIN products p
         ON p.store_id = s.id
+
       WHERE
-        p.category_id = ?
+        p.main_category_id = ?
         AND p.status = 'Active'
         AND s.status = 'Active'
+
       GROUP BY
         s.id,
         s.store_name,
         s.store_logo,
         s.description,
         s.address
+
       ORDER BY s.store_name ASC
       `,
-      [categoryId]
+      [id]
     );
 
     return NextResponse.json({
@@ -38,14 +43,16 @@ export async function GET(request, { params }) {
     });
 
   } catch (error) {
-    console.error(error);
+    console.log(error);
 
     return NextResponse.json(
       {
         success: false,
-        message: error.message,
+        message: "Internal Server Error",
       },
-      { status: 500 }
+      {
+        status: 500,
+      }
     );
   }
 }

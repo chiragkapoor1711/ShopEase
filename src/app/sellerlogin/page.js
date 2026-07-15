@@ -50,16 +50,18 @@ export default function AdminLogin() {
 
       // Allow only admins
       if (data.user.role !== "seller") {
-        setMessage("Access denied. Admin account required.");
+        setMessage("Access denied. seller account required.");
         return;
       }
+
+      
 
       // Sync shared AuthContext so the Navbar updates immediately
       await refreshUser();
       toast.success(`Welcome, ${data.user.full_name}!`);
 
 
-      router.push("/admin/dashboard");
+      router.push("/seller/dashboard");
     } catch (error) {
       console.log(error);
       setMessage("Something went wrong.");

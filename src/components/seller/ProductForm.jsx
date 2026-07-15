@@ -10,14 +10,13 @@ import {
   X,
   Check,
   Loader2,
-  Tag,
-  Package,
 } from "lucide-react";
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_SIZE_BYTES = 2 * 1024 * 1024; // 2MB
 
 const initialForm = {
+  main_category_id: "",
   category_id: "",
   product_name: "",
   product_image: "",
@@ -30,46 +29,34 @@ const initialForm = {
   status: "Active",
 };
 
-function SectionHeading({ icon: Icon, title, subtitle }) {
-  return (
-    <div className="flex items-center gap-2 mb-4">
-      <div className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center shrink-0">
-        <Icon size={14} className="text-blue-600 dark:text-blue-400" />
-      </div>
-      <div>
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white leading-tight">
-          {title}
-        </h3>
-        {subtitle && (
-          <p className="text-xs text-gray-400 leading-tight">{subtitle}</p>
-        )}
-      </div>
-    </div>
-  );
-}
-
 function Field({ label, required, error, children }) {
   return (
     <div>
-      <label className="block font-medium text-sm text-gray-900 dark:text-white mb-2">
+      <label className="block font-semibold text-sm text-gray-900 dark:text-gray-100 mb-1.5">
         {label} {required && <span className="text-red-500">*</span>}
       </label>
       {children}
-      {error && <p className="text-xs text-red-500 mt-1.5">{error}</p>}
+      {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
     </div>
   );
 }
 
+// BUG FIX: "border-#0c0c0c-300" / "text-#0a0a0a-900" / "text-#000000-900" are
+// not valid Tailwind classes (you can't mix a raw hex with a -300/-900 scale
+// suffix) — Tailwind silently drops unrecognized classes, so none of these
+// borders/text colors were actually applied. Using real named shades below.
 const inputClass =
-  "w-full rounded-xl border border-gray-200 dark:border-gray-700 p-3 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 outline-none transition focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-500/30 focus:border-blue-400";
+  "w-full rounded-lg border-2 border-gray-400 dark:border-gray-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 outline-none transition focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-500/30 focus:border-blue-500";
 const inputErrorClass =
-  "w-full rounded-xl border border-red-400 p-3 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 outline-none transition focus:ring-2 focus:ring-red-200 dark:focus:ring-red-500/30";
+  "w-full rounded-lg border-2 border-red-500 px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 outline-none transition focus:ring-2 focus:ring-red-200 dark:focus:ring-red-500/30";
 
 export default function ProductForm({ editingProduct, onCancelEdit, onSaved }) {
   const [formData, setFormData] = useState(initialForm);
-  const [categories, setCategories] = useState([]);
+  const [mainCategories, setMainCategories] = useState([]);
+  const [subCategories, setSubCategories] = useState([]);
+  const [loadingMainCategories, setLoadingMainCategories] = useState(false);
+  const [loadingSubCategories, setLoadingSubCategories] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [loadingCategories, setLoadingCategories] = useState(false);
   const [imagePreview, setImagePreview] = useState("");
   const [uploading, setUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -79,29 +66,66 @@ export default function ProductForm({ editingProduct, onCancelEdit, onSaved }) {
   const isEditing = Boolean(editingProduct);
 
   useEffect(() => {
-    fetchCategories();
+    fetchMainCategories();
   }, []);
 
-  async function fetchCategories() {
+  async function fetchMainCategories() {
     try {
-      setLoadingCategories(true);
-      const res = await fetch("/api/seller/categories", {
-        credentials: "include",
-      });
+      setLoadingMainCategories(true);
+      const res = await fetch("/api/main-categories");
       const data = await res.json();
-      if (!data.success) throw new Error(data.message);
-      setCategories(data.categories || []);
-    } catch (err) {
-      toast.error(err.message || "Failed to load categories.");
+      if (data.success) {
+        setMainCategories(data.categories || []);
+      }
+    } catch (error) {
+      console.error(error);
     } finally {
-      setLoadingCategories(false);
+      setLoadingMainCategories(false);
     }
   }
 
+ async function fetchSubCategories(mainCategoryId) {
+  if (!mainCategoryId) {
+    setSubCategories([]);
+    return;
+  }
+
+  try {
+    setLoadingSubCategories(true);
+
+    const res = await fetch(
+      `/api/seller/sub-categories?mainCategory=${mainCategoryId}`,
+      { credentials: "include" }
+    );
+
+    const data = await res.json();
+
+    if (data.success) {
+      const categories = data.categories || [];
+
+      setSubCategories(categories);
+
+      // Show toast if no subcategories exist
+      if (categories.length === 0) {
+        toast.error("Please create a sub category first.");
+      }
+    } else {
+      setSubCategories([]);
+      toast.error(data.message || "Failed to load sub categories.");
+    }
+  } catch (error) {
+    console.error(error);
+    setSubCategories([]);
+    toast.error("Failed to load sub categories.");
+  } finally {
+    setLoadingSubCategories(false);
+  }
+}
   useEffect(() => {
     if (editingProduct) {
       setFormData({
-        category_id: editingProduct.category_id,
+        main_category_id: editingProduct.main_category_id || "",
+        category_id: editingProduct.category_id || "",
         product_name: editingProduct.product_name,
         product_image: editingProduct.product_image || "",
         description: editingProduct.description || "",
@@ -113,15 +137,29 @@ export default function ProductForm({ editingProduct, onCancelEdit, onSaved }) {
         status: editingProduct.status,
       });
       setImagePreview(editingProduct.product_image || "");
+      // Load the sub category list for the product's existing main category
+      // so its current sub category shows up as selected, not blank.
+      if (editingProduct.main_category_id) {
+        fetchSubCategories(editingProduct.main_category_id);
+      }
     } else {
       setFormData(initialForm);
       setImagePreview("");
+      setSubCategories([]);
     }
     setTouched({});
   }, [editingProduct]);
 
   function handleChange(e) {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  }
+
+  function handleMainCategoryChange(e) {
+    const value = e.target.value;
+    // Changing the main category invalidates whatever sub category was
+    // picked, since sub categories belong to exactly one main category.
+    setFormData((prev) => ({ ...prev, main_category_id: value, category_id: "" }));
+    fetchSubCategories(value);
   }
 
   function markTouched(field) {
@@ -195,6 +233,7 @@ export default function ProductForm({ editingProduct, onCancelEdit, onSaved }) {
   function handleReset() {
     setFormData(initialForm);
     setImagePreview("");
+    setSubCategories([]);
     setTouched({});
     onCancelEdit?.();
   }
@@ -204,6 +243,7 @@ export default function ProductForm({ editingProduct, onCancelEdit, onSaved }) {
 
     setTouched({
       product_name: true,
+      main_category_id: true,
       category_id: true,
       price: true,
     });
@@ -212,8 +252,12 @@ export default function ProductForm({ editingProduct, onCancelEdit, onSaved }) {
       toast.error("Product name is required.");
       return;
     }
+    if (!formData.main_category_id) {
+      toast.error("Select Main Category");
+      return;
+    }
     if (!formData.category_id) {
-      toast.error("Please select a category.");
+      toast.error("Select Sub Category");
       return;
     }
     if (!formData.price) {
@@ -248,6 +292,7 @@ export default function ProductForm({ editingProduct, onCancelEdit, onSaved }) {
       toast.success(data.message || (editingProduct ? "Product updated." : "Product created."));
       setFormData(initialForm);
       setImagePreview("");
+      setSubCategories([]);
       setTouched({});
       onSaved?.();
     } catch (err) {
@@ -270,111 +315,243 @@ export default function ProductForm({ editingProduct, onCancelEdit, onSaved }) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg ring-1 ring-black/5 dark:ring-white/10 p-5 sm:p-7 lg:p-8 max-w-full overflow-x-hidden"
+      className="w-full bg-white dark:bg-gray-900 rounded-2xl shadow-lg ring-1 ring-black/5 dark:ring-white/10 p-4 sm:p-5 lg:p-6"
     >
       <div className="flex items-center justify-between mb-1">
-        <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold text-gray-900 dark:text-white">
+        <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
           {isEditing ? "Edit product" : "Add new product"}
         </h2>
         {isEditing && (
           <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
-            Editing “{editingProduct.product_name}”
+            Editing "{editingProduct.product_name}"
           </span>
         )}
       </div>
-      <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 sm:mb-8">
+      <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
         Fill in the details buyers will see on the product page.
       </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_220px] gap-6 sm:gap-8">
-        {/* Left: identity + description */}
-        <div className="flex flex-col gap-6">
-          <div>
-            <SectionHeading
-              icon={Tag}
-              title="Product details"
-              subtitle="Name, category, and brand"
+      {/* Single unified 2-column layout: left = all fields stacked, right = image matching that height */}
+      <div className="flex flex-col md:flex-row gap-5 items-stretch">
+        {/* Left: every field stacked, compact */}
+        <div className="flex-1 flex flex-col gap-3.5 min-w-0">
+          <Field
+            label="Product name"
+            required
+            error={touched.product_name && !formData.product_name.trim() ? "Product name is required." : null}
+          >
+            <input
+              type="text"
+              name="product_name"
+              value={formData.product_name}
+              onChange={handleChange}
+              onBlur={() => markTouched("product_name")}
+              placeholder="e.g. Wireless Headphones"
+              className={
+                touched.product_name && !formData.product_name.trim()
+                  ? inputErrorClass
+                  : inputClass
+              }
             />
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="sm:col-span-2">
-                <Field
-                  label="Product name"
-                  required
-                  error={touched.product_name && !formData.product_name.trim() ? "Product name is required." : null}
-                >
-                  <input
-                    type="text"
-                    name="product_name"
-                    value={formData.product_name}
-                    onChange={handleChange}
-                    onBlur={() => markTouched("product_name")}
-                    placeholder="e.g. Wireless Headphones"
-                    className={
-                      touched.product_name && !formData.product_name.trim()
-                        ? inputErrorClass
-                        : inputClass
-                    }
-                  />
-                </Field>
-              </div>
+          </Field>
 
-              <Field
-                label="Category"
-                required
-                error={touched.category_id && !formData.category_id ? "Please select a category." : null}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <Field
+              label="Main Category"
+              required
+              error={
+                touched.main_category_id && !formData.main_category_id
+                  ? "Select Main Category"
+                  : null
+              }
+            >
+              <select
+                name="main_category_id"
+                value={formData.main_category_id}
+                onChange={handleMainCategoryChange}
+                onBlur={() => markTouched("main_category_id")}
+                className={
+                  touched.main_category_id && !formData.main_category_id
+                    ? inputErrorClass
+                    : inputClass
+                }
               >
-                <select
-                  name="category_id"
-                  value={formData.category_id}
-                  onChange={handleChange}
-                  onBlur={() => markTouched("category_id")}
-                  className={
-                    touched.category_id && !formData.category_id
-                      ? inputErrorClass
-                      : inputClass
-                  }
-                >
-                  <option value="">
-                    {loadingCategories ? "Loading categories..." : "Select category"}
+                <option value="">
+                  {loadingMainCategories ? "Loading..." : "Select Main Category"}
+                </option>
+                {mainCategories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.category_name}
                   </option>
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.category_name}
-                    </option>
-                  ))}
-                </select>
-              </Field>
+                ))}
+              </select>
+            </Field>
 
-              <Field label="Brand">
-                <input
-                  type="text"
-                  name="brand"
-                  value={formData.brand}
-                  onChange={handleChange}
-                  placeholder="Apple"
-                  className={inputClass}
-                />
-              </Field>
-            </div>
-          </div>
-
-          <div>
-            <Field label="Description">
-              <textarea
-                rows={5}
-                name="description"
-                value={formData.description}
+            <Field
+              label="Sub Category"
+              required
+              error={
+                touched.category_id && !formData.category_id
+                  ? "Select Sub Category"
+                  : null
+              }
+            >
+              <select
+                name="category_id"
+                value={formData.category_id}
                 onChange={handleChange}
-                placeholder="What makes this product worth buying?"
-                className={`${inputClass} resize-none`}
+                onBlur={() => markTouched("category_id")}
+                disabled={!formData.main_category_id || loadingSubCategories}
+                className={`${
+                  touched.category_id && !formData.category_id
+                    ? inputErrorClass
+                    : inputClass
+                } disabled:opacity-50 disabled:cursor-not-allowed`}
+              >
+                <option value="">
+                  {!formData.main_category_id
+                    ? "Select Main Category first"
+                    : loadingSubCategories
+                      ? "Loading..."
+                      : "Select Sub Category"}
+                </option>
+                {subCategories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.category_name}
+                  </option>
+                ))}
+              </select>
+            </Field>
+
+            <Field label="Brand">
+              <input
+                type="text"
+                name="brand"
+                value={formData.brand}
+                onChange={handleChange}
+                placeholder="Apple"
+                className={inputClass}
               />
             </Field>
           </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Field
+              label="Price"
+              required
+              error={touched.price && !formData.price ? "Price is required." : null}
+            >
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
+                  ₹
+                </span>
+                <input
+                  type="number"
+                  name="price"
+                  value={formData.price}
+                  onChange={handleChange}
+                  onBlur={() => markTouched("price")}
+                  placeholder="999"
+                  className={`${
+                    touched.price && !formData.price ? inputErrorClass : inputClass
+                  } pl-7`}
+                />
+              </div>
+            </Field>
+
+            <Field
+              label="Discount price"
+              error={discountInvalid ? "Must be lower than the price." : null}
+            >
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
+                  ₹
+                </span>
+                <input
+                  type="number"
+                  name="discount_price"
+                  value={formData.discount_price}
+                  onChange={handleChange}
+                  placeholder="799"
+                  className={`${discountInvalid ? inputErrorClass : inputClass} pl-7`}
+                />
+                {discountPercent !== null && (
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                    −{discountPercent}%
+                  </span>
+                )}
+              </div>
+            </Field>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Stock quantity">
+              <input
+                type="number"
+                name="stock"
+                value={formData.stock}
+                onChange={handleChange}
+                placeholder="50"
+                className={inputClass}
+              />
+            </Field>
+
+            <Field label="SKU">
+              <input
+                type="text"
+                name="sku"
+                value={formData.sku}
+                onChange={handleChange}
+                placeholder="SKU001"
+                className={inputClass}
+              />
+            </Field>
+          </div>
+
+          <Field label="Description">
+            <textarea
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              placeholder="What makes this product worth buying?"
+              className={`${inputClass} resize-none flex-1 min-h-[72px]`}
+            />
+          </Field>
+
+          <div>
+            <label className="block font-semibold text-sm text-gray-900 dark:text-gray-100 mb-1.5">
+              Status
+            </label>
+            <div className="inline-flex rounded-lg border-2 border-gray-300 dark:border-gray-600 p-1 bg-gray-50 dark:bg-gray-800">
+              {["Active", "Inactive"].map((option) => {
+                const selected = formData.status === option;
+                return (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => setFormData((prev) => ({ ...prev, status: option }))}
+                    className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-sm font-medium transition ${
+                      selected
+                        ? option === "Active"
+                          ? "bg-white dark:bg-gray-700 text-emerald-700 dark:text-emerald-400 shadow-sm"
+                          : "bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 shadow-sm"
+                        : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
+                    }`}
+                  >
+                    {selected && <Check size={14} />}
+                    {option}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
 
-        {/* Right: image uploader */}
-        <div>
-          <SectionHeading icon={ImageUp} title="Image" />
+        {/* Right: image box stretches to match the full height of the left column */}
+        <div className="w-full md:w-64 lg:w-80 shrink-0 flex flex-col">
+          <label className="block font-semibold text-sm text-gray-900 dark:text-gray-100 mb-1.5">
+            Image
+          </label>
 
           <input
             ref={fileInputRef}
@@ -393,10 +570,10 @@ export default function ProductForm({ editingProduct, onCancelEdit, onSaved }) {
             }}
             onDragLeave={() => setIsDragging(false)}
             onDrop={handleDrop}
-            className={`relative w-full aspect-square rounded-xl border-2 border-dashed transition flex flex-col items-center justify-center overflow-hidden ${
+            className={`relative w-full flex-1 min-h-[220px] rounded-lg border-2 border-dashed transition flex flex-col items-center justify-center overflow-hidden ${
               isDragging
-                ? "border-blue-400 bg-blue-50 dark:bg-blue-500/10"
-                : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 bg-gray-50 dark:bg-gray-800"
+                ? "border-blue-500 bg-blue-50 dark:bg-blue-500/10"
+                : "border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 bg-gray-50 dark:bg-gray-800"
             }`}
           >
             {imagePreview ? (
@@ -441,118 +618,12 @@ export default function ProductForm({ editingProduct, onCancelEdit, onSaved }) {
         </div>
       </div>
 
-      <div className="mt-6 sm:mt-8">
-        <SectionHeading
-          icon={Package}
-          title="Pricing & inventory"
-          subtitle="Price, stock, and identifiers"
-        />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Field
-            label="Price"
-            required
-            error={touched.price && !formData.price ? "Price is required." : null}
-          >
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
-                ₹
-              </span>
-              <input
-                type="number"
-                name="price"
-                value={formData.price}
-                onChange={handleChange}
-                onBlur={() => markTouched("price")}
-                placeholder="999"
-                className={`${
-                  touched.price && !formData.price ? inputErrorClass : inputClass
-                } pl-7`}
-              />
-            </div>
-          </Field>
-
-          <Field
-            label="Discount price"
-            error={discountInvalid ? "Must be lower than the price." : null}
-          >
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
-                ₹
-              </span>
-              <input
-                type="number"
-                name="discount_price"
-                value={formData.discount_price}
-                onChange={handleChange}
-                placeholder="799"
-                className={`${discountInvalid ? inputErrorClass : inputClass} pl-7`}
-              />
-              {discountPercent !== null && (
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                  −{discountPercent}%
-                </span>
-              )}
-            </div>
-          </Field>
-
-          <Field label="Stock quantity">
-            <input
-              type="number"
-              name="stock"
-              value={formData.stock}
-              onChange={handleChange}
-              placeholder="50"
-              className={inputClass}
-            />
-          </Field>
-
-          <Field label="SKU">
-            <input
-              type="text"
-              name="sku"
-              value={formData.sku}
-              onChange={handleChange}
-              placeholder="SKU001"
-              className={inputClass}
-            />
-          </Field>
-        </div>
-
-        <div className="mt-4">
-          <label className="block font-medium text-sm text-gray-900 dark:text-white mb-2">
-            Status
-          </label>
-          <div className="inline-flex rounded-xl border border-gray-200 dark:border-gray-700 p-1 bg-gray-50 dark:bg-gray-800">
-            {["Active", "Inactive"].map((option) => {
-              const selected = formData.status === option;
-              return (
-                <button
-                  key={option}
-                  type="button"
-                  onClick={() => setFormData((prev) => ({ ...prev, status: option }))}
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition ${
-                    selected
-                      ? option === "Active"
-                        ? "bg-white dark:bg-gray-700 text-emerald-700 dark:text-emerald-400 shadow-sm"
-                        : "bg-white dark:bg-gray-700 text-gray-500 dark:text-gray-300 shadow-sm"
-                      : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
-                  }`}
-                >
-                  {selected && <Check size={14} />}
-                  {option}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      <div className="flex flex-col-reverse sm:flex-row gap-3 mt-8 pt-6 border-t border-gray-100 dark:border-gray-800">
+      <div className="flex flex-col-reverse sm:flex-row gap-3 mt-5 pt-4 border-t-2 border-gray-100 dark:border-gray-800">
         <button
           type="button"
           onClick={handleReset}
           disabled={loading}
-          className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50 transition"
+          className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50 transition"
         >
           <RotateCcw size={16} />
           {isEditing ? "Cancel" : "Reset"}
@@ -561,7 +632,7 @@ export default function ProductForm({ editingProduct, onCancelEdit, onSaved }) {
         <button
           type="submit"
           disabled={loading || uploading}
-          className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white px-6 py-2.5 rounded-xl transition text-sm font-medium shadow-sm sm:ml-auto"
+          className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white px-5 py-2 rounded-lg transition text-sm font-medium shadow-sm sm:ml-auto"
         >
           {loading ? (
             <Loader2 size={16} className="animate-spin" />

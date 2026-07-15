@@ -17,7 +17,7 @@ export async function GET() {
           success: false,
           message: "Please login first.",
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -29,14 +29,14 @@ export async function GET() {
           success: false,
           message: "Access denied.",
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     // Get seller's store
     const [stores] = await db.query(
       "SELECT id FROM stores WHERE seller_id = ?",
-      [decoded.id]
+      [decoded.id],
     );
 
     if (stores.length === 0) {
@@ -45,7 +45,7 @@ export async function GET() {
           success: false,
           message: "Store not found.",
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -57,7 +57,7 @@ export async function GET() {
        FROM categories
        WHERE store_id = ?
        ORDER BY id DESC`,
-      [storeId]
+      [storeId],
     );
 
     return NextResponse.json({
@@ -72,7 +72,7 @@ export async function GET() {
         success: false,
         message: "Internal Server Error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -91,7 +91,7 @@ export async function POST(request) {
           success: false,
           message: "Please login first.",
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -103,14 +103,14 @@ export async function POST(request) {
           success: false,
           message: "Access denied.",
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     // Get seller's store
     const [stores] = await db.query(
       "SELECT id FROM stores WHERE seller_id = ?",
-      [decoded.id]
+      [decoded.id],
     );
 
     if (stores.length === 0) {
@@ -119,18 +119,16 @@ export async function POST(request) {
           success: false,
           message: "Store not found.",
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     const storeId = stores[0].id;
 
-    const {
-      category_name,
-      category_image,
-      description,
-      status,
-    } = await request.json();
+    // BUG FIX: main_category_id was used below but never destructured here,
+    // which threw "main_category_id is not defined" on every create.
+    const { main_category_id, category_name, category_image, description, status } =
+      await request.json();
 
     if (!category_name) {
       return NextResponse.json(
@@ -138,7 +136,17 @@ export async function POST(request) {
           success: false,
           message: "Category name is required.",
         },
-        { status: 400 }
+        { status: 400 },
+      );
+    }
+
+    if (!main_category_id) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Main category is required.",
+        },
+        { status: 400 },
       );
     }
 
@@ -148,7 +156,7 @@ export async function POST(request) {
        FROM categories
        WHERE store_id = ?
        AND category_name = ?`,
-      [storeId, category_name]
+      [storeId, category_name],
     );
 
     if (existing.length > 0) {
@@ -157,7 +165,7 @@ export async function POST(request) {
           success: false,
           message: "Category already exists.",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -165,19 +173,21 @@ export async function POST(request) {
       `INSERT INTO categories
       (
         store_id,
+        main_category_id,
         category_name,
         category_image,
         description,
         status
       )
-      VALUES (?, ?, ?, ?, ?)`,
+      VALUES (?, ?, ?, ?, ?, ?)`,
       [
         storeId,
+        main_category_id,
         category_name,
         category_image || "",
         description || "",
         status || "Active",
-      ]
+      ],
     );
 
     return NextResponse.json({
@@ -192,8 +202,7 @@ export async function POST(request) {
         success: false,
         message: "Internal Server Error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-

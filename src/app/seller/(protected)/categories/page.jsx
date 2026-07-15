@@ -13,6 +13,10 @@ export default function CategoriesPage() {
   const [categories, setCategories] = useState([]);
   const [loadingList, setLoadingList] = useState(true);
 
+  // BUG FIX: this was referenced below in <CategoriesTable mainCategories={mainCategories} />
+  // but never declared or fetched anywhere, causing "ReferenceError: mainCategories is not defined".
+  const [mainCategories, setMainCategories] = useState([]);
+
   const [editingCategory, setEditingCategory] = useState(null);
 
   const [categoryToDelete, setCategoryToDelete] = useState(null);
@@ -39,9 +43,30 @@ export default function CategoriesPage() {
     }
   }, []);
 
+  const fetchMainCategories = useCallback(async () => {
+    try {
+      const res = await fetch("/api/main-categories", {
+        method: "GET",
+        credentials: "include",
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Failed to load main categories.");
+      }
+
+      setMainCategories(data.categories || []);
+    } catch (err) {
+      // Non-fatal: the table still renders, just shows "Unassigned"
+      // instead of the main category name.
+      console.error(err);
+    }
+  }, []);
+
   useEffect(() => {
     fetchCategories();
-  }, [fetchCategories]);
+    fetchMainCategories();
+  }, [fetchCategories, fetchMainCategories]);
 
   function handleEditClick(cat) {
     setEditingCategory(cat);
@@ -124,6 +149,7 @@ export default function CategoriesPage() {
 
               <CategoriesTable
                 categories={categories}
+                mainCategories={mainCategories}
                 onEdit={handleEditClick}
                 onDelete={setCategoryToDelete}
               />

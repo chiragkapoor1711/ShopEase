@@ -70,7 +70,12 @@ export async function PUT(request, context) {
       );
     }
 
+    // BUG FIX: main_category_id was sent by the form but never destructured
+    // or written to the UPDATE query, so editing a product's main category
+    // was silently ignored (same bug pattern fixed earlier on the
+    // categories PUT route).
     const {
+      main_category_id,
       category_id,
       product_name,
       product_image,
@@ -83,10 +88,20 @@ export async function PUT(request, context) {
       status,
     } = await request.json();
 
-    // Check category belongs to seller
+    if (!main_category_id || !category_id || !product_name || !price) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Main Category, Sub Category, Product Name and Price are required.",
+        },
+        { status: 400 }
+      );
+    }
+
+    // Check sub category belongs to seller AND to the given main category
     const [category] = await db.query(
-      "SELECT id FROM categories WHERE id=? AND store_id=?",
-      [category_id, storeId]
+      "SELECT id FROM categories WHERE id=? AND store_id=? AND main_category_id=?",
+      [category_id, storeId, main_category_id]
     );
 
     if (category.length === 0) {
@@ -125,6 +140,7 @@ export async function PUT(request, context) {
       `
       UPDATE products
       SET
+        main_category_id=?,
         category_id=?,
         product_name=?,
         product_image=?,
@@ -138,6 +154,7 @@ export async function PUT(request, context) {
       WHERE id=? AND store_id=?
       `,
       [
+        main_category_id,
         category_id,
         product_name,
         product_image,

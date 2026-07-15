@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Search, Filter, ArrowUpDown, X, ChevronDown } from "lucide-react";
 
 const inputWrapperClass =
-  "w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white outline-none transition focus-within:ring-2 focus-within:ring-blue-200 dark:focus-within:ring-blue-500/30 focus-within:border-blue-400";
+  "w-full rounded-xl border border-#000000-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-#080808-900 dark:text-white outline-none transition focus-within:ring-2 focus-within:ring-blue-200 dark:focus-within:ring-blue-500/30 focus-within:border-blue-400";
 
 export default function SearchFilter({
   search,

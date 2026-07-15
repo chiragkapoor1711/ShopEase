@@ -13,7 +13,7 @@ export default function FeaturedCategories() {
 
   async function fetchCategories() {
     try {
-      const res = await fetch("/api/categories");
+      const res = await fetch("/api/home/main-categories");
       const data = await res.json();
 
       if (data.success) {

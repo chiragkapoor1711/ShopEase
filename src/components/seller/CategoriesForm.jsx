@@ -11,19 +11,36 @@ import {
   X,
   Check,
 } from "lucide-react";
+import Select from "react-select";
 
 const EMPTY_FORM = {
+  main_category_id: "",
   category_name: "",
   description: "",
   status: "Active",
-  category_image: "", // relative path returned by the upload endpoint
+  category_image: "",
 };
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_SIZE_BYTES = 2 * 1024 * 1024; // 2MB
 const MAX_DESCRIPTION_LENGTH = 300;
 
-export default function CategoriesForm({ editingCategory, onCancelEdit, onSaved }) {
+// BUG FIX: "border-#080808-300" / "text-#0e0e0e-900" are not valid Tailwind
+// classes (Tailwind wants either a named scale like border-gray-300, or an
+// arbitrary value in brackets like border-[#080808]) — Tailwind silently
+// drops unrecognized classes, so the borders/text color never actually
+// rendered. Using a darker named shade (gray-400) for the "bold, clearly
+// visible" border the comment intended, and a valid text color.
+const inputClass =
+  "w-full rounded-lg border-2 border-gray-400 dark:border-gray-600 px-3 py-2 text-sm sm:text-base bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 outline-none transition focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-500/30 focus:border-blue-500";
+const inputErrorClass =
+  "w-full rounded-lg border-2 border-red-500 px-3 py-2 text-sm sm:text-base bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 outline-none transition focus:ring-2 focus:ring-red-200 dark:focus:ring-red-500/30";
+
+export default function CategoriesForm({
+  editingCategory,
+  onCancelEdit,
+  onSaved,
+}) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [imagePreview, setImagePreview] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -35,9 +52,34 @@ export default function CategoriesForm({ editingCategory, onCancelEdit, onSaved 
   const isEditing = Boolean(editingCategory);
   const nameInvalid = nameTouched && !form.category_name.trim();
 
+  const [mainCategories, setMainCategories] = useState([]);
+
+  const options = mainCategories.map((item) => ({
+    value: item.id,
+    label: item.category_name,
+  }));
+
+  useEffect(() => {
+    fetchMainCategories();
+  }, []);
+
+  async function fetchMainCategories() {
+    try {
+      const res = await fetch("/api/main-categories");
+      const data = await res.json();
+
+      if (data.success) {
+        setMainCategories(data.categories);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
   useEffect(() => {
     if (editingCategory) {
       setForm({
+        main_category_id: editingCategory.main_category_id || "",
         category_name: editingCategory.category_name || "",
         description: editingCategory.description || "",
         status: editingCategory.status || "Active",
@@ -133,11 +175,18 @@ export default function CategoriesForm({ editingCategory, onCancelEdit, onSaved 
       return;
     }
     if (form.description.length > MAX_DESCRIPTION_LENGTH) {
-      toast.error(`Description must be under ${MAX_DESCRIPTION_LENGTH} characters.`);
+      toast.error(
+        `Description must be under ${MAX_DESCRIPTION_LENGTH} characters.`,
+      );
       return;
     }
     if (uploading) {
       toast.error("Please wait for the image to finish uploading.");
+      return;
+    }
+
+    if (!form.main_category_id) {
+      toast.error("Please select a Main Category.");
       return;
     }
 
@@ -174,26 +223,56 @@ export default function CategoriesForm({ editingCategory, onCancelEdit, onSaved 
   const descriptionNearLimit = descriptionCount > MAX_DESCRIPTION_LENGTH * 0.9;
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg ring-1 ring-black/5 dark:ring-white/10 p-5 sm:p-7 lg:p-8">
+    <div className="w-full bg-white dark:bg-gray-900 rounded-2xl shadow-lg ring-1 ring-black/5 dark:ring-white/10 p-4 sm:p-5 lg:p-6">
       <div className="flex items-center justify-between mb-1">
-        <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold text-gray-900 dark:text-white">
+        <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
           {isEditing ? "Edit category" : "Add category"}
         </h2>
         {isEditing && (
           <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
-            Editing “{editingCategory.category_name}”
+            Editing "{editingCategory.category_name}"
           </span>
         )}
       </div>
-      <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 sm:mb-8">
-        Categories help shoppers browse your catalog. Give this one a clear name and image.
+      <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+        Categories help shoppers browse your catalog. Give this one a clear name
+        and image.
       </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_220px] gap-6 sm:gap-8">
+      {/* Single unified 2-column layout: left = all fields stacked, right = image matching that height */}
+      <div className="flex flex-col md:flex-row gap-5 items-stretch">
         {/* Left column: name + description + status */}
-        <div className="flex flex-col gap-5 sm:gap-6 order-2 md:order-1">
+
+        <div className="flex-1 flex flex-col gap-3.5 min-w-0 order-2 md:order-1">
           <div>
-            <label className="block font-medium text-sm text-gray-900 dark:text-white mb-2">
+            <label className="block font-semibold text-sm text-gray-900 dark:text-gray-100 mb-1.5">
+              Main Category <span className="text-red-500">*</span>
+            </label>
+
+            <Select
+              options={options}
+              isSearchable
+              placeholder="Select Main Category"
+              value={
+                options.find(
+                  (option) =>
+                    String(option.value) === String(form.main_category_id),
+                ) || null
+              }
+              onChange={(selected) =>
+                handleFieldChange("main_category_id", selected?.value || "")
+              }
+              styles={{
+                control: (base) => ({
+                  ...base,
+                  minHeight: "44px",
+                  borderRadius: "0.5rem",
+                }),
+              }}
+            />
+          </div>
+          <div>
+            <label className="block font-semibold text-sm text-gray-900 dark:text-gray-100 mb-1.5">
               Category name <span className="text-red-500">*</span>
             </label>
             <input
@@ -201,21 +280,21 @@ export default function CategoriesForm({ editingCategory, onCancelEdit, onSaved 
               placeholder="e.g. Men's Footwear"
               value={form.category_name}
               onBlur={() => setNameTouched(true)}
-              onChange={(e) => handleFieldChange("category_name", e.target.value)}
-              className={`w-full rounded-xl border p-3 text-sm sm:text-base bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 outline-none transition focus:ring-2 focus:ring-offset-0 ${
-                nameInvalid
-                  ? "border-red-400 focus:ring-red-200 dark:focus:ring-red-500/30"
-                  : "border-gray-200 dark:border-gray-700 focus:ring-blue-200 dark:focus:ring-blue-500/30 focus:border-blue-400"
-              }`}
+              onChange={(e) =>
+                handleFieldChange("category_name", e.target.value)
+              }
+              className={nameInvalid ? inputErrorClass : inputClass}
             />
             {nameInvalid && (
-              <p className="text-xs text-red-500 mt-1.5">Category name is required.</p>
+              <p className="text-xs text-red-500 mt-1">
+                Category name is required.
+              </p>
             )}
           </div>
 
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="font-medium text-sm text-gray-900 dark:text-white">
+          <div className="flex-1 flex flex-col">
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="font-semibold text-sm text-gray-900 dark:text-gray-100">
                 Description
               </label>
               <span
@@ -229,20 +308,19 @@ export default function CategoriesForm({ editingCategory, onCancelEdit, onSaved 
               </span>
             </div>
             <textarea
-              rows={5}
               placeholder="What kind of products live in this category?"
               value={form.description}
               maxLength={MAX_DESCRIPTION_LENGTH}
               onChange={(e) => handleFieldChange("description", e.target.value)}
-              className="w-full rounded-xl border border-gray-200 dark:border-gray-700 p-3 text-sm sm:text-base bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 outline-none transition focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-500/30 focus:border-blue-400 resize-none"
+              className={`${inputClass} resize-none flex-1 min-h-[96px]`}
             />
           </div>
 
           <div>
-            <label className="block font-medium text-sm text-gray-900 dark:text-white mb-2">
+            <label className="block font-semibold text-sm text-gray-900 dark:text-gray-100 mb-1.5">
               Status
             </label>
-            <div className="inline-flex rounded-xl border border-gray-200 dark:border-gray-700 p-1 bg-gray-50 dark:bg-gray-800">
+            <div className="inline-flex rounded-lg border-2 border-gray-300 dark:border-gray-600 p-1 bg-gray-50 dark:bg-gray-800">
               {["Active", "Inactive"].map((option) => {
                 const selected = form.status === option;
                 return (
@@ -250,11 +328,11 @@ export default function CategoriesForm({ editingCategory, onCancelEdit, onSaved 
                     key={option}
                     type="button"
                     onClick={() => handleFieldChange("status", option)}
-                    className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition ${
+                    className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-sm font-medium transition ${
                       selected
                         ? option === "Active"
                           ? "bg-white dark:bg-gray-700 text-emerald-700 dark:text-emerald-400 shadow-sm"
-                          : "bg-white dark:bg-gray-700 text-gray-500 dark:text-gray-300 shadow-sm"
+                          : "bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 shadow-sm"
                         : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
                     }`}
                   >
@@ -267,9 +345,9 @@ export default function CategoriesForm({ editingCategory, onCancelEdit, onSaved 
           </div>
         </div>
 
-        {/* Right column: image uploader */}
-        <div className="order-1 md:order-2">
-          <label className="block font-medium text-sm text-gray-900 dark:text-white mb-2">
+        {/* Right column: image box stretches to match the full height of the left column */}
+        <div className="w-full md:w-64 lg:w-80 shrink-0 flex flex-col order-1 md:order-2">
+          <label className="block font-semibold text-sm text-gray-900 dark:text-gray-100 mb-1.5">
             Category image
           </label>
 
@@ -290,10 +368,10 @@ export default function CategoriesForm({ editingCategory, onCancelEdit, onSaved 
             }}
             onDragLeave={() => setIsDragging(false)}
             onDrop={handleDrop}
-            className={`relative w-full aspect-square rounded-xl border-2 border-dashed transition flex flex-col items-center justify-center overflow-hidden ${
+            className={`relative w-full flex-1 min-h-[220px] rounded-lg border-2 border-dashed transition flex flex-col items-center justify-center overflow-hidden ${
               isDragging
-                ? "border-blue-400 bg-blue-50 dark:bg-blue-500/10"
-                : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 bg-gray-50 dark:bg-gray-800"
+                ? "border-blue-500 bg-blue-50 dark:bg-blue-500/10"
+                : "border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 bg-gray-50 dark:bg-gray-800"
             }`}
           >
             {imagePreview ? (
@@ -331,18 +409,20 @@ export default function CategoriesForm({ editingCategory, onCancelEdit, onSaved 
                   </span>{" "}
                   or drag and drop
                 </p>
-                <p className="text-[11px] text-gray-400">JPG, PNG, WEBP · up to 2MB</p>
+                <p className="text-[11px] text-gray-400">
+                  JPG, PNG, WEBP · up to 2MB
+                </p>
               </div>
             )}
           </button>
         </div>
       </div>
 
-      <div className="flex flex-col-reverse sm:flex-row gap-3 mt-8 pt-6 border-t border-gray-100 dark:border-gray-800">
+      <div className="flex flex-col-reverse sm:flex-row gap-3 mt-5 pt-4 border-t-2 border-gray-100 dark:border-gray-800">
         <button
           onClick={resetForm}
           disabled={saving}
-          className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50 transition"
+          className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50 transition"
         >
           <RotateCcw size={16} />
           Reset
@@ -351,14 +431,18 @@ export default function CategoriesForm({ editingCategory, onCancelEdit, onSaved 
         <button
           onClick={handleSave}
           disabled={saving || uploading}
-          className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white px-6 py-2.5 rounded-xl transition text-sm font-medium shadow-sm sm:ml-auto"
+          className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white px-5 py-2 rounded-lg transition text-sm font-medium shadow-sm sm:ml-auto"
         >
           {saving ? (
             <Loader2 size={16} className="animate-spin" />
           ) : (
             <PlusCircle size={16} />
           )}
-          {saving ? "Saving..." : isEditing ? "Update category" : "Save category"}
+          {saving
+            ? "Saving..."
+            : isEditing
+              ? "Update category"
+              : "Save category"}
         </button>
       </div>
     </div>

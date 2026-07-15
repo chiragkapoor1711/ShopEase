@@ -41,14 +41,22 @@ export async function GET() {
 
     const storeId = stores[0].id;
 
+    // BUG FIX: query only joined `categories` (sub category), so the product
+    // table had no way to show which main category a product belongs to.
+    // Added a LEFT JOIN to main_categories, and renamed the sub-category
+    // alias to sub_category_name so it doesn't collide with
+    // main_category_name in the returned row.
     const [products] = await db.query(
       `
       SELECT
         products.*,
-        categories.category_name
+        main_categories.category_name AS main_category_name,
+        categories.category_name AS sub_category_name
       FROM products
       LEFT JOIN categories
-      ON categories.id = products.category_id
+        ON categories.id = products.category_id
+      LEFT JOIN main_categories
+        ON main_categories.id = products.main_category_id
       WHERE products.store_id = ?
       ORDER BY products.id DESC
       `,
@@ -120,7 +128,12 @@ export async function POST(request) {
 
     const storeId = stores[0].id;
 
+    // BUG FIX: main_category_id is sent by the form (ProductForm.jsx) but
+    // was never destructured here or inserted, so it would have been
+    // silently dropped (or thrown a ReferenceError, same bug pattern as the
+    // categories route earlier).
     const {
+      main_category_id,
       category_id,
       product_name,
       product_image,
@@ -134,20 +147,21 @@ export async function POST(request) {
     } = await request.json();
 
     // Validation
-    if (!category_id || !product_name || !price) {
+    if (!main_category_id || !category_id || !product_name || !price) {
       return NextResponse.json(
         {
           success: false,
-          message: "Category, Product Name and Price are required.",
+          message: "Main Category, Sub Category, Product Name and Price are required.",
         },
         { status: 400 }
       );
     }
 
-    // Check category belongs to seller
+    // Check sub category belongs to seller AND to the given main category,
+    // so a request can't pair a main_category_id with an unrelated category_id.
     const [category] = await db.query(
-      "SELECT id FROM categories WHERE id = ? AND store_id = ?",
-      [category_id, storeId]
+      "SELECT id FROM categories WHERE id = ? AND store_id = ? AND main_category_id = ?",
+      [category_id, storeId, main_category_id]
     );
 
     if (category.length === 0) {
@@ -183,6 +197,7 @@ export async function POST(request) {
       `INSERT INTO products
       (
         store_id,
+        main_category_id,
         category_id,
         product_name,
         product_image,
@@ -194,9 +209,10 @@ export async function POST(request) {
         brand,
         status
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         storeId,
+        main_category_id,
         category_id,
         product_name,
         product_image || "",

@@ -183,6 +183,28 @@ export async function PUT(request) {
       gst_number,
     } = await request.json();
 
+    // Get existing store
+    const [existingStore] = await db.query(
+      "SELECT store_logo FROM stores WHERE seller_id = ?",
+      [decoded.id]
+    );
+
+    if (existingStore.length === 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Store not found.",
+        },
+        { status: 404 }
+      );
+    }
+
+    // Keep old logo if no new logo was sent
+    const logoToSave =
+      store_logo && store_logo.trim() !== ""
+        ? store_logo
+        : existingStore[0].store_logo;
+
     const [result] = await db.query(
       `
       UPDATE stores
@@ -198,8 +220,8 @@ export async function PUT(request) {
       WHERE seller_id = ?
       `,
       [
-        store_name, 
-        store_logo || "",
+        store_name,
+        logoToSave,
         description,
         address,
         phone,
@@ -208,16 +230,6 @@ export async function PUT(request) {
         decoded.id,
       ]
     );
-
-    if (result.affectedRows === 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Store not found.",
-        },
-        { status: 404 }
-      );
-    }
 
     return NextResponse.json({
       success: true,

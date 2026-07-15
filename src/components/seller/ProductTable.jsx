@@ -27,6 +27,29 @@ function StatusBadge({ status, stock }) {
   );
 }
 
+// BUG FIX: the products GET query now returns `main_category_name` and
+// `sub_category_name` (renamed from `category_name` to avoid colliding with
+// the new main-category join). This falls back to the old `category_name`
+// field too, in case an older API response shape is ever in play.
+function CategoryCell({ mainCategoryName, subCategoryName }) {
+  if (!mainCategoryName && !subCategoryName) {
+    return <span className="italic text-gray-300 dark:text-gray-600">Unassigned</span>;
+  }
+
+  return (
+    <div className="flex flex-col leading-tight">
+      <span className="text-gray-700 dark:text-gray-300">
+        {subCategoryName || (
+          <span className="italic text-gray-300 dark:text-gray-600">No sub category</span>
+        )}
+      </span>
+      <span className="text-xs text-gray-400">
+        {mainCategoryName || "Unassigned"}
+      </span>
+    </div>
+  );
+}
+
 function PriceCell({ price, discountPrice }) {
   const hasDiscount =
     discountPrice && Number(discountPrice) > 0 && Number(discountPrice) < Number(price);
@@ -153,8 +176,11 @@ export default function ProductTable({ products, onEdit, onDelete }) {
                     <td className="py-3 px-3 font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">
                       {product.product_name}
                     </td>
-                    <td className="py-3 px-3 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                      {product.category_name}
+                    <td className="py-3 px-3 text-sm whitespace-nowrap">
+                      <CategoryCell
+                        mainCategoryName={product.main_category_name}
+                        subCategoryName={product.sub_category_name || product.category_name}
+                      />
                     </td>
                     <td className="py-3 px-3 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
                       {product.brand || (
@@ -190,44 +216,51 @@ export default function ProductTable({ products, onEdit, onDelete }) {
             <EmptyState />
           </div>
         ) : (
-          products.map((product) => (
-            <div
-              key={product.id}
-              className="bg-white dark:bg-gray-900 rounded-xl ring-1 ring-black/5 dark:ring-white/10 shadow-sm p-3.5 flex gap-3"
-            >
-              <Image
-                src={product.product_image || "/uploads/no-image.png"}
-                alt={product.product_name}
-                width={72}
-                height={72}
-                className="w-[72px] h-[72px] rounded-lg object-cover shrink-0 ring-1 ring-black/5 dark:ring-white/10"
-              />
+          products.map((product) => {
+            const subCategoryName = product.sub_category_name || product.category_name;
+            const categoryLine = [product.main_category_name, subCategoryName]
+              .filter(Boolean)
+              .join(" › ");
 
-              <div className="min-w-0 flex-1">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <h3 className="font-medium text-gray-900 dark:text-white truncate">
-                      {product.product_name}
-                    </h3>
-                    <p className="text-xs text-gray-400 truncate">
-                      {product.category_name}
-                      {product.brand ? ` · ${product.brand}` : ""}
-                    </p>
+            return (
+              <div
+                key={product.id}
+                className="bg-white dark:bg-gray-900 rounded-xl ring-1 ring-black/5 dark:ring-white/10 shadow-sm p-3.5 flex gap-3"
+              >
+                <Image
+                  src={product.product_image || "/uploads/no-image.png"}
+                  alt={product.product_name}
+                  width={72}
+                  height={72}
+                  className="w-[72px] h-[72px] rounded-lg object-cover shrink-0 ring-1 ring-black/5 dark:ring-white/10"
+                />
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <h3 className="font-medium text-gray-900 dark:text-white truncate">
+                        {product.product_name}
+                      </h3>
+                      <p className="text-xs text-gray-400 truncate">
+                        {categoryLine || "Unassigned"}
+                        {product.brand ? ` · ${product.brand}` : ""}
+                      </p>
+                    </div>
+                    <StatusBadge status={product.status} stock={product.stock} />
                   </div>
-                  <StatusBadge status={product.status} stock={product.stock} />
-                </div>
 
-                <div className="flex items-center justify-between mt-2">
-                  <PriceCell price={product.price} discountPrice={product.discount_price} />
-                  <p className="text-xs text-gray-400">Stock: {product.stock}</p>
-                </div>
+                  <div className="flex items-center justify-between mt-2">
+                    <PriceCell price={product.price} discountPrice={product.discount_price} />
+                    <p className="text-xs text-gray-400">Stock: {product.stock}</p>
+                  </div>
 
-                <div className="flex items-center justify-end gap-1 mt-2.5 pt-2.5 border-t border-gray-100 dark:border-gray-800">
-                  <ActionButtons product={product} onEdit={onEdit} onDelete={onDelete} />
+                  <div className="flex items-center justify-end gap-1 mt-2.5 pt-2.5 border-t border-gray-100 dark:border-gray-800">
+                    <ActionButtons product={product} onEdit={onEdit} onDelete={onDelete} />
+                  </div>
                 </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </>
