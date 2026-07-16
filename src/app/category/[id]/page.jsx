@@ -43,13 +43,12 @@ export default function VendorListingPage() {
   return (
     <section className="max-w-7xl mx-auto px-6 py-12">
       <button
-        onClick={handleBack}
-        aria-label="Go back"
-        className="inline-flex items-center gap-2 mb-6 text-blue-600 hover:text-blue-700 font-medium transition"
-      >
-        <ArrowLeft size={20} />
-        Back
-      </button>
+      onClick={() => router.back()}
+      className="inline-flex items-center mb-5 justify-center w-10 h-10 rounded-lg border-2 border-gray-200 text-gray-600 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 active:scale-90 transition-all duration-150"
+      aria-label="Go back"
+    >
+      <ArrowLeft size={18} />
+    </button>
 
       <h1 className="text-4xl font-bold mb-10 dark:text-white">Vendors</h1>
 

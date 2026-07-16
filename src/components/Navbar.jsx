@@ -15,10 +15,12 @@ import {
   User,
   KeyRound,
 } from "lucide-react";
+import { ShoppingCart } from "lucide-react";
 
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useAuth } from "@/context/AuthContext";
+import { useCart } from "@/context/CartContext";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -34,6 +36,9 @@ export default function Navbar() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
+  const { cartCount } = useCart();
+
+
   const roleRef = useRef(null);
   const profileRef = useRef(null);
   const drawerRef = useRef(null);
@@ -41,6 +46,11 @@ export default function Navbar() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Only fetch the cart count for logged-in customers, and reset it
+  // to 0 immediately on logout so the badge doesn't linger.
+  
+  
 
   // Close the Role / Profile dropdowns when clicking outside of them
   useEffect(() => {
@@ -68,6 +78,7 @@ export default function Navbar() {
     });
 
     setUser(null); // instantly clears user everywhere via context
+    setCartCount(0);
     setProfileDrawer(false);
     toast.success("Logged out successfully.");
     router.push("/");
@@ -161,6 +172,23 @@ export default function Navbar() {
                 </button>
               )}
 
+              {/* Cart */}
+              <Link
+                href="/cart"
+                className="relative flex items-center justify-center p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+              >
+                <ShoppingCart
+                  size={24}
+                  className="text-gray-700 dark:text-gray-200"
+                />
+
+                {cartCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {cartCount}
+                  </span>
+                )}
+              </Link>
+
               {/* Auth section — desktop only */}
               {user ? (
                 <div className="relative" ref={profileRef}>
@@ -186,9 +214,12 @@ export default function Navbar() {
                   >
                     Sign Up
                   </Link>
+                  
+                  
                 </div>
               )}
             </div>
+            
 
             {/* Mobile Buttons */}
             <div className="flex items-center gap-2 sm:gap-3 md:hidden">
@@ -204,6 +235,23 @@ export default function Navbar() {
                   )}
                 </button>
               )}
+
+              {/* Cart */}
+              <Link
+                href="/cart"
+                className="relative flex items-center justify-center p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+              >
+                <ShoppingCart
+                  size={22}
+                  className="text-gray-700 dark:text-gray-200"
+                />
+
+                {cartCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center">
+                    {cartCount}
+                  </span>
+                )}
+              </Link>
 
               {/* Profile icon — mobile/tablet only, opens the same drawer as desktop */}
               {user && (
