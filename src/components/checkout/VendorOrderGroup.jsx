@@ -5,14 +5,12 @@ import CheckoutItem from "./CheckoutItem";
 
 export default function VendorOrderGroup({ vendor }) {
   const vendorTotal = vendor.items.reduce((total, item) => {
-    const sellingPrice =
-      Number(item.discount_price) > 0
-        ? Number(item.discount_price)
-        : Number(item.price);
+    const sellingPrice = item.has_offer
+      ? Number(item.final_price)
+      : Number(item.price);
 
     return total + sellingPrice * Number(item.quantity);
   }, 0);
-
   return (
     <section className="bg-white rounded-2xl shadow-sm border-2 border-gray-200 p-5 sm:p-6">
       {/* Vendor Header */}
@@ -28,7 +26,9 @@ export default function VendorOrderGroup({ vendor }) {
         </div>
 
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">{vendor.storeName}</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
+            {vendor.storeName}
+          </h2>
           <p className="text-gray-500 text-sm sm:text-base">
             {vendor.items.length} Product{vendor.items.length > 1 ? "s" : ""}
           </p>
@@ -38,7 +38,10 @@ export default function VendorOrderGroup({ vendor }) {
       {/* Products */}
       <div className="space-y-4 mt-5 sm:mt-6">
         {vendor.items.map((item, index) => (
-          <div key={item.cart_id} style={{ animationDelay: `${Math.min(index, 6) * 60}ms` }}>
+          <div
+            key={item.cart_id}
+            style={{ animationDelay: `${Math.min(index, 6) * 60}ms` }}
+          >
             <CheckoutItem item={item} />
           </div>
         ))}

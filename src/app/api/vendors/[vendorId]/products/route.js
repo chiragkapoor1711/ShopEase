@@ -11,42 +11,60 @@ export async function GET(request, { params }) {
 
     const [products] = await db.query(
       `
-      SELECT
-          p.id,
-          p.product_name,
-          p.product_image,
-          p.price,
-          p.discount_price,
-          p.stock,
-          p.brand,
-          c.category_name,
-          s.store_name
+  SELECT
+      p.id,
+      p.product_name,
+      p.product_image,
+      p.price,
+      p.stock,
+      p.brand,
 
-      FROM products p
+      c.category_name,
+      s.store_name,
 
-      INNER JOIN categories c
-          ON c.id = p.category_id
+      o.discount_percentage,
 
-      INNER JOIN stores s
-          ON s.id = p.store_id
+      CASE
+          WHEN o.id IS NOT NULL THEN TRUE
+          ELSE FALSE
+      END AS has_offer,
 
-      WHERE
-          p.store_id = ?
-          AND p.category_id = ?
-          AND p.status='Active'
+      CASE
+          WHEN o.id IS NOT NULL
+          THEN ROUND(
+              p.price - (p.price * o.discount_percentage / 100),
+              2
+          )
+          ELSE p.price
+      END AS final_price
 
-      ORDER BY p.created_at DESC
-      `,
-      [vendorId, categoryId]
+  FROM products p
+
+  INNER JOIN categories c
+      ON c.id = p.category_id
+
+  INNER JOIN stores s
+      ON s.id = p.store_id
+
+  LEFT JOIN offers o
+      ON o.product_id = p.id
+      AND o.status = 'active'
+      AND CURDATE() BETWEEN o.start_date AND o.end_date
+
+  WHERE
+      p.store_id = ?
+      AND p.category_id = ?
+      AND p.status = 'Active'
+
+  ORDER BY p.created_at DESC
+  `,
+      [vendorId, categoryId],
     );
-
     return NextResponse.json({
       success: true,
       products,
     });
-
   } catch (error) {
-
     console.log(error);
 
     return NextResponse.json(
@@ -56,7 +74,7 @@ export async function GET(request, { params }) {
       },
       {
         status: 500,
-      }
+      },
     );
   }
 }

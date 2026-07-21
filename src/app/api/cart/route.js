@@ -158,14 +158,29 @@ export async function GET() {
     p.product_image,
     p.brand,
     p.price,
-    p.discount_price,
     p.stock,
     p.store_id,
     p.main_category_id,
     p.category_id,
 
     s.store_name,
-    s.store_logo
+    s.store_logo,
+
+    o.discount_percentage,
+
+    CASE
+        WHEN o.id IS NOT NULL THEN TRUE
+        ELSE FALSE
+    END AS has_offer,
+
+    CASE
+        WHEN o.id IS NOT NULL
+        THEN ROUND(
+            p.price - (p.price * o.discount_percentage / 100),
+            2
+        )
+        ELSE p.price
+    END AS final_price
 
 FROM cart c
 
@@ -174,6 +189,11 @@ ON c.product_id = p.id
 
 JOIN stores s
 ON p.store_id = s.id
+
+LEFT JOIN offers o
+ON o.product_id = p.id
+AND o.status='active'
+AND CURDATE() BETWEEN o.start_date AND o.end_date
 
 WHERE c.customer_id = ?
 

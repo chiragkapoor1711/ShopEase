@@ -3,13 +3,11 @@
 import Image from "next/image";
 
 export default function CheckoutItem({ item }) {
-  const sellingPrice =
-    Number(item.discount_price) > 0
-      ? Number(item.discount_price)
-      : Number(item.price);
+  const sellingPrice = item.has_offer
+    ? Number(item.final_price)
+    : Number(item.price);
 
   const subtotal = sellingPrice * Number(item.quantity);
-
   return (
     <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5 border-2 border-gray-200 hover:border-blue-300 rounded-xl p-4 sm:p-5 bg-white shadow-sm hover:shadow-md transition-all duration-300 animate-item-in">
       {/* Product Image */}
@@ -33,15 +31,21 @@ export default function CheckoutItem({ item }) {
           Brand: {item.brand || "No Brand"}
         </p>
 
-        <div className="flex items-center gap-2.5 mt-2.5">
+        <div className="flex items-center gap-2.5 mt-2.5 flex-wrap">
           <span className="text-lg sm:text-xl font-bold text-blue-600">
             ₹{sellingPrice.toLocaleString("en-IN")}
           </span>
 
-          {Number(item.discount_price) > 0 && (
-            <span className="text-sm text-gray-400 line-through">
-              ₹{Number(item.price).toLocaleString("en-IN")}
-            </span>
+          {item.has_offer && (
+            <>
+              <span className="text-sm text-gray-400 line-through">
+                ₹{Number(item.price).toLocaleString("en-IN")}
+              </span>
+
+              <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                {item.discount_percentage}% OFF
+              </span>
+            </>
           )}
         </div>
       </div>
@@ -50,7 +54,9 @@ export default function CheckoutItem({ item }) {
       <div className="flex sm:flex-col sm:text-right justify-between sm:justify-start gap-1 sm:gap-0 sm:min-w-[120px] pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-100">
         <div>
           <p className="text-gray-500 text-xs sm:text-sm">Qty</p>
-          <p className="font-semibold text-base sm:text-lg text-gray-900">{item.quantity}</p>
+          <p className="font-semibold text-base sm:text-lg text-gray-900">
+            {item.quantity}
+          </p>
         </div>
 
         <div className="sm:mt-3">

@@ -6,7 +6,8 @@ import { Eye, Pencil, Trash2, Inbox, PlusCircle } from "lucide-react";
 function StatusBadge({ status, stock }) {
   let label = status;
   let dotColor = "bg-emerald-500";
-  let classes = "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400";
+  let classes =
+    "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400";
 
   if (stock <= 0) {
     label = "Out of stock";
@@ -33,14 +34,20 @@ function StatusBadge({ status, stock }) {
 // field too, in case an older API response shape is ever in play.
 function CategoryCell({ mainCategoryName, subCategoryName }) {
   if (!mainCategoryName && !subCategoryName) {
-    return <span className="italic text-gray-300 dark:text-gray-600">Unassigned</span>;
+    return (
+      <span className="italic text-gray-300 dark:text-gray-600">
+        Unassigned
+      </span>
+    );
   }
 
   return (
     <div className="flex flex-col leading-tight">
       <span className="text-gray-700 dark:text-gray-300">
         {subCategoryName || (
-          <span className="italic text-gray-300 dark:text-gray-600">No sub category</span>
+          <span className="italic text-gray-300 dark:text-gray-600">
+            No sub category
+          </span>
         )}
       </span>
       <span className="text-xs text-gray-400">
@@ -50,11 +57,8 @@ function CategoryCell({ mainCategoryName, subCategoryName }) {
   );
 }
 
-function PriceCell({ price, discountPrice }) {
-  const hasDiscount =
-    discountPrice && Number(discountPrice) > 0 && Number(discountPrice) < Number(price);
-
-  if (!hasDiscount) {
+function PriceCell({ price, finalPrice, hasOffer, discountPercentage }) {
+  if (!hasOffer) {
     return (
       <span className="font-medium text-gray-900 dark:text-gray-100">
         ₹{Number(price).toLocaleString("en-IN")}
@@ -64,12 +68,19 @@ function PriceCell({ price, discountPrice }) {
 
   return (
     <div className="flex flex-col leading-tight">
-      <span className="font-medium text-gray-900 dark:text-gray-100">
-        ₹{Number(discountPrice).toLocaleString("en-IN")}
+      <span className="font-medium text-green-600">
+        ₹{Number(finalPrice).toLocaleString("en-IN")}
       </span>
-      <span className="text-xs text-gray-400 line-through">
-        ₹{Number(price).toLocaleString("en-IN")}
-      </span>
+
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-gray-400 line-through">
+          ₹{Number(price).toLocaleString("en-IN")}
+        </span>
+
+        <span className="text-xs font-semibold text-red-600">
+          {discountPercentage}% OFF
+        </span>
+      </div>
     </div>
   );
 }
@@ -112,7 +123,8 @@ function EmptyState() {
         No products yet
       </p>
       <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs">
-        Products you add will show up here. Click "Add Product" to create your first one.
+        Products you add will show up here. Click "Add Product" to create your
+        first one.
       </p>
     </div>
   );
@@ -179,26 +191,42 @@ export default function ProductTable({ products, onEdit, onDelete }) {
                     <td className="py-3 px-3 text-sm whitespace-nowrap">
                       <CategoryCell
                         mainCategoryName={product.main_category_name}
-                        subCategoryName={product.sub_category_name || product.category_name}
+                        subCategoryName={
+                          product.sub_category_name || product.category_name
+                        }
                       />
                     </td>
                     <td className="py-3 px-3 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
                       {product.brand || (
-                        <span className="italic text-gray-300 dark:text-gray-600">N/A</span>
+                        <span className="italic text-gray-300 dark:text-gray-600">
+                          N/A
+                        </span>
                       )}
                     </td>
-                    <td className="py-3 px-3 text-sm whitespace-nowrap">
-                      <PriceCell price={product.price} discountPrice={product.discount_price} />
+                    <td className="py-3 px-3">
+                      <PriceCell
+                        price={product.price}
+                        finalPrice={product.final_price}
+                        hasOffer={product.has_offer}
+                        discountPercentage={product.discount_percentage}
+                      />
                     </td>
                     <td className="py-3 px-3 text-sm text-gray-700 dark:text-gray-300">
                       {product.stock}
                     </td>
                     <td className="py-3 px-3">
-                      <StatusBadge status={product.status} stock={product.stock} />
+                      <StatusBadge
+                        status={product.status}
+                        stock={product.stock}
+                      />
                     </td>
                     <td className="py-3 pl-3 pr-5">
                       <div className="flex justify-end">
-                        <ActionButtons product={product} onEdit={onEdit} onDelete={onDelete} />
+                        <ActionButtons
+                          product={product}
+                          onEdit={onEdit}
+                          onDelete={onDelete}
+                        />
                       </div>
                     </td>
                   </tr>
@@ -217,7 +245,8 @@ export default function ProductTable({ products, onEdit, onDelete }) {
           </div>
         ) : (
           products.map((product) => {
-            const subCategoryName = product.sub_category_name || product.category_name;
+            const subCategoryName =
+              product.sub_category_name || product.category_name;
             const categoryLine = [product.main_category_name, subCategoryName]
               .filter(Boolean)
               .join(" › ");
@@ -246,16 +275,30 @@ export default function ProductTable({ products, onEdit, onDelete }) {
                         {product.brand ? ` · ${product.brand}` : ""}
                       </p>
                     </div>
-                    <StatusBadge status={product.status} stock={product.stock} />
+                    <StatusBadge
+                      status={product.status}
+                      stock={product.stock}
+                    />
                   </div>
 
                   <div className="flex items-center justify-between mt-2">
-                    <PriceCell price={product.price} discountPrice={product.discount_price} />
-                    <p className="text-xs text-gray-400">Stock: {product.stock}</p>
+                    <PriceCell
+                      price={product.price}
+                      finalPrice={product.final_price}
+                      hasOffer={product.has_offer}
+                      discountPercentage={product.discount_percentage}
+                    />
+                    <p className="text-xs text-gray-400">
+                      Stock: {product.stock}
+                    </p>
                   </div>
 
                   <div className="flex items-center justify-end gap-1 mt-2.5 pt-2.5 border-t border-gray-100 dark:border-gray-800">
-                    <ActionButtons product={product} onEdit={onEdit} onDelete={onDelete} />
+                    <ActionButtons
+                      product={product}
+                      onEdit={onEdit}
+                      onDelete={onDelete}
+                    />
                   </div>
                 </div>
               </div>

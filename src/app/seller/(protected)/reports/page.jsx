@@ -2,32 +2,26 @@
 
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-
+import clsx from "clsx";
 import {
   IndianRupee,
   Package,
   Trophy,
-  BarChart3,
   TrendingUp,
-  Calendar,
+  TrendingDown,
   Download,
+  CreditCard,
+  Users,
+  ShoppingBag,
+  Tag,
+  BarChart3,
+  Loader2,
 } from "lucide-react";
 
-import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  PieChart,
-  Pie,
-  Cell,
-  Legend,
-} from "recharts";
+const cardShell =
+  "bg-white dark:bg-gray-900 rounded-2xl shadow-sm ring-1 ring-black/5 dark:ring-white/10";
 
-const COLORS = [
+const BAR_COLORS = [
   "#3b82f6",
   "#22c55e",
   "#f97316",
@@ -35,6 +29,108 @@ const COLORS = [
   "#ef4444",
   "#14b8a6",
 ];
+
+/* ---------- building blocks ---------- */
+
+function StatCard({ icon: Icon, label, value, color, trend }) {
+  return (
+    <div className={`${cardShell} p-5 sm:p-6`}>
+      <div className="flex justify-between items-start gap-3">
+        <div className="min-w-0">
+          <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{label}</p>
+          <h2 className="text-xl sm:text-2xl font-bold mt-2 text-gray-900 dark:text-white truncate">
+            {value}
+          </h2>
+          {trend && (
+            <div
+              className={clsx(
+                "inline-flex items-center gap-1 text-xs font-semibold mt-2 px-2 py-0.5 rounded-full",
+                trend.direction === "up"
+                  ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400"
+                  : "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400"
+              )}
+            >
+              {trend.direction === "up" ? (
+                <TrendingUp size={12} />
+              ) : (
+                <TrendingDown size={12} />
+              )}
+              {trend.label}
+            </div>
+          )}
+        </div>
+        <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-xl ${color} flex items-center justify-center shrink-0`}>
+          <Icon size={20} className="text-white" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SectionCard({ icon: Icon, title, subtitle, children }) {
+  return (
+    <div className={`${cardShell} p-5 sm:p-6`}>
+      <div className="mb-5">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center shrink-0">
+            <Icon size={16} className="text-blue-600 dark:text-blue-400" />
+          </div>
+          <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
+            {title}
+          </h2>
+        </div>
+        {subtitle && (
+          <p className="text-xs text-gray-400 mt-1.5 ml-[42px]">{subtitle}</p>
+        )}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+/** Proportional horizontal bar list — replaces the removed chart components. */
+function BarList({ data, labelKey, valueKey, subKey, emptyLabel }) {
+  if (!data.length) {
+    return (
+      <div className="py-10 text-center text-sm text-gray-400">{emptyLabel}</div>
+    );
+  }
+
+  const max = Math.max(...data.map((d) => Number(d[valueKey])), 1);
+
+  return (
+    <div className="space-y-4">
+      {data.map((d, i) => {
+        const value = Number(d[valueKey]);
+        const pct = Math.max((value / max) * 100, 4);
+
+        return (
+          <div key={i}>
+            <div className="flex justify-between items-baseline gap-3 mb-1.5">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">
+                {d[labelKey]}
+                {subKey && (
+                  <span className="text-gray-400 font-normal"> · {d[subKey]}</span>
+                )}
+              </span>
+              <span className="text-sm font-semibold text-gray-900 dark:text-white tabular-nums shrink-0">
+                ₹{value.toLocaleString("en-IN")}
+              </span>
+            </div>
+            <div className="h-2 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{ width: `${pct}%`, backgroundColor: BAR_COLORS[i % BAR_COLORS.length] }}
+              />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ---------- page ---------- */
 
 export default function ReportsPage() {
   const [summary, setSummary] = useState({
@@ -81,294 +177,189 @@ export default function ReportsPage() {
     fetchReports();
   }, []);
 
+  // Month-over-month growth, derived from the same data the old bar chart used.
+  let monthlyTrend = null;
+  if (monthlyChart.length >= 2) {
+    const prev = Number(monthlyChart[monthlyChart.length - 2].revenue);
+    const curr = Number(monthlyChart[monthlyChart.length - 1].revenue);
+    if (prev > 0) {
+      const pct = ((curr - prev) / prev) * 100;
+      monthlyTrend = {
+        direction: pct >= 0 ? "up" : "down",
+        label: `${pct >= 0 ? "+" : ""}${pct.toFixed(1)}% vs last month`,
+      };
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className={`${cardShell} flex items-center justify-center gap-2 py-24 text-gray-500 dark:text-gray-400`}>
+        <Loader2 size={18} className="animate-spin" />
+        <span className="text-sm">Loading reports...</span>
+      </div>
+    );
+  }
+
   return (
-    <div>
+    <div className="max-w-7xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-8">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold dark:text-white">Reports</h1>
-          <p className="text-gray-500 mt-2">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+            Reports
+          </h1>
+          <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 mt-1.5">
             Monitor your sales performance and business insights.
           </p>
         </div>
 
         <button
           onClick={() => window.print()}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-xl transition mt-4 md:mt-0"
+          className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-xl transition text-sm sm:text-base font-medium shadow-sm shrink-0"
         >
-          <Download size={18} />
-          Export Report
+          <Download size={16} />
+          Export report
         </button>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-6">
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-6 hover:shadow-xl transition">
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="text-gray-500">Today's Sales</p>
-              <h2 className="text-3xl font-bold mt-2 dark:text-white">
-                ₹{Number(summary.todaySales).toLocaleString("en-IN")}
-              </h2>
-            </div>
-            <div className="w-14 h-14 rounded-xl bg-green-500 flex items-center justify-center">
-              <IndianRupee className="text-white" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-6 hover:shadow-xl transition">
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="text-gray-500">Monthly Sales</p>
-              <h2 className="text-3xl font-bold mt-2 dark:text-white">
-                ₹{Number(summary.monthlySales).toLocaleString("en-IN")}
-              </h2>
-            </div>
-            <div className="w-14 h-14 rounded-xl bg-blue-500 flex items-center justify-center">
-              <TrendingUp className="text-white" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-6 hover:shadow-xl transition">
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="text-gray-500">Best Selling Product</p>
-              <h2 className="text-xl font-bold mt-2 dark:text-white">
-                {topProducts.length ? topProducts[0].product_name : "-"}
-              </h2>
-            </div>
-            <div className="w-14 h-14 rounded-xl bg-orange-500 flex items-center justify-center">
-              <Trophy className="text-white" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-6 hover:shadow-xl transition">
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="text-gray-500">Top Category</p>
-              <h2 className="text-xl font-bold mt-2 dark:text-white">
-                {categorySales.length ? categorySales[0].category_name : "-"}
-              </h2>
-            </div>
-            <div className="w-14 h-14 rounded-xl bg-purple-500 flex items-center justify-center">
-              <Package className="text-white" />
-            </div>
-          </div>
-        </div>
+      {/* Stat cards */}
+      <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5">
+        <StatCard
+          icon={IndianRupee}
+          label="Today's sales"
+          value={`₹${Number(summary.todaySales).toLocaleString("en-IN")}`}
+          color="bg-emerald-500"
+        />
+        <StatCard
+          icon={TrendingUp}
+          label="Monthly sales"
+          value={`₹${Number(summary.monthlySales).toLocaleString("en-IN")}`}
+          color="bg-blue-500"
+          trend={monthlyTrend}
+        />
+        <StatCard
+          icon={Trophy}
+          label="Best selling product"
+          value={topProducts.length ? topProducts[0].product_name : "—"}
+          color="bg-orange-500"
+        />
+        <StatCard
+          icon={Package}
+          label="Top category"
+          value={categorySales.length ? categorySales[0].category_name : "—"}
+          color="bg-purple-500"
+        />
       </div>
 
-      {/* Charts */}
-      <div className="grid lg:grid-cols-2 gap-8 mt-10">
-        {/* Sales Chart */}
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold dark:text-white">
-              Sales Overview
-            </h2>
-            <Calendar className="text-blue-600" />
-          </div>
+      {/* Monthly performance + Category revenue share */}
+      <div className="grid lg:grid-cols-2 gap-5">
+        <SectionCard
+          icon={BarChart3}
+          title="Monthly performance"
+          subtitle="Revenue by month"
+        >
+          <BarList
+            data={monthlyChart}
+            labelKey="month"
+            valueKey="revenue"
+            emptyLabel="No sales data yet."
+          />
+        </SectionCard>
 
-          {monthlyChart.length ? (
-            <ResponsiveContainer width="100%" height={320}>
-              <BarChart data={monthlyChart}>
-                <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                <YAxis tick={{ fontSize: 12 }} />
-                <Tooltip
-                  formatter={(value) =>
-                    `₹${Number(value).toLocaleString("en-IN")}`
-                  }
-                />
-                <Bar dataKey="revenue" fill="#3b82f6" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="h-80 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-700 flex flex-col items-center justify-center">
-              <BarChart3 size={60} className="text-blue-500" />
-              <p className="mt-4 text-gray-500">No sales data yet</p>
+        <SectionCard
+          icon={Tag}
+          title="Category revenue share"
+          subtitle="Where your revenue comes from"
+        >
+          <BarList
+            data={categorySales}
+            labelKey="category_name"
+            valueKey="revenue"
+            emptyLabel="No category data yet."
+          />
+        </SectionCard>
+      </div>
+
+      {/* Top products + Payment methods */}
+      <div className="grid lg:grid-cols-2 gap-5">
+        <div className={`${cardShell} p-5 sm:p-6`}>
+          <div className="flex items-center gap-2.5 mb-5">
+            <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center shrink-0">
+              <Trophy size={16} className="text-blue-600 dark:text-blue-400" />
             </div>
-          )}
-        </div>
-
-        {/* Revenue Chart (category split) */}
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold dark:text-white">
-              Revenue Analytics
+            <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
+              Top selling products
             </h2>
-            <IndianRupee className="text-green-600" />
           </div>
 
-          {categorySales.length ? (
-            <ResponsiveContainer width="100%" height={320}>
-              <PieChart>
-                <Pie
-                  data={categorySales}
-                  dataKey="revenue"
-                  nameKey="category_name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={110}
-                  label={({ category_name }) => category_name}
-                >
-                  {categorySales.map((_, i) => (
-                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
+          {topProducts.length ? (
+            <div className="overflow-x-auto -mx-1">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="text-xs uppercase tracking-wide text-gray-400 border-b border-gray-100 dark:border-gray-800">
+                    <th className="pb-2.5 px-1 font-semibold">Product</th>
+                    <th className="pb-2.5 px-1 font-semibold text-right">Sold</th>
+                    <th className="pb-2.5 px-1 font-semibold text-right">Revenue</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {topProducts.map((p, i) => (
+                    <tr key={i} className="border-b border-gray-50 dark:border-gray-800/60 last:border-0">
+                      <td className="py-3 px-1 text-sm font-medium text-gray-900 dark:text-white truncate max-w-[180px]">
+                        {p.product_name}
+                      </td>
+                      <td className="py-3 px-1 text-sm text-gray-500 dark:text-gray-400 text-right tabular-nums">
+                        {p.sold}
+                      </td>
+                      <td className="py-3 px-1 text-sm font-semibold text-gray-900 dark:text-white text-right tabular-nums">
+                        ₹{Number(p.revenue).toLocaleString("en-IN")}
+                      </td>
+                    </tr>
                   ))}
-                </Pie>
-                <Tooltip
-                  formatter={(value) =>
-                    `₹${Number(value).toLocaleString("en-IN")}`
-                  }
-                />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
+                </tbody>
+              </table>
+            </div>
           ) : (
-            <div className="h-80 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-700 flex flex-col items-center justify-center">
-              <TrendingUp size={60} className="text-green-500" />
-              <p className="mt-4 text-gray-500">No revenue data yet</p>
+            <div className="py-10 text-center text-sm text-gray-400">
+              No products sold yet.
             </div>
           )}
         </div>
+
+        <SectionCard
+          icon={CreditCard}
+          title="Payment methods"
+          subtitle="Revenue share by method"
+        >
+          <BarList
+            data={paymentMethods}
+            labelKey="payment_method"
+            valueKey="revenue"
+            subKey="orders"
+            emptyLabel="No payment data yet."
+          />
+        </SectionCard>
       </div>
 
-      {/* Top Selling Products */}
-      <div className="mt-10 bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-6">
-        <h2 className="text-2xl font-bold mb-6 dark:text-white">
-          🔥 Top Selling Products
-        </h2>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="text-gray-500 border-b dark:border-gray-700">
-                <th className="pb-3">Product</th>
-                <th className="pb-3">Sold</th>
-                <th className="pb-3">Revenue</th>
-              </tr>
-            </thead>
-            <tbody>
-              {topProducts.length ? (
-                topProducts.map((p, i) => (
-                  <tr key={i} className="border-b dark:border-gray-800">
-                    <td className="py-3 dark:text-white">{p.product_name}</td>
-                    <td className="py-3 dark:text-white">{p.sold}</td>
-                    <td className="py-3 dark:text-white">
-                      ₹{Number(p.revenue).toLocaleString("en-IN")}
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={3} className="py-6 text-center text-gray-500">
-                    No products sold yet.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Category Sales */}
-      <div className="mt-10 bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-6">
-        <h2 className="text-2xl font-bold mb-6 dark:text-white">
-          📂 Category Sales
-        </h2>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="text-gray-500 border-b dark:border-gray-700">
-                <th className="pb-3">Category</th>
-                <th className="pb-3">Items Sold</th>
-                <th className="pb-3">Revenue</th>
-              </tr>
-            </thead>
-            <tbody>
-              {categorySales.length ? (
-                categorySales.map((c, i) => (
-                  <tr key={i} className="border-b dark:border-gray-800">
-                    <td className="py-3 dark:text-white">{c.category_name}</td>
-                    <td className="py-3 dark:text-white">{c.total_items}</td>
-                    <td className="py-3 dark:text-white">
-                      ₹{Number(c.revenue).toLocaleString("en-IN")}
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={3} className="py-6 text-center text-gray-500">
-                    No category data yet.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Payment Methods */}
-      <div className="mt-10 bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-6">
-        <h2 className="text-2xl font-bold mb-6 dark:text-white">
-          💳 Payment Methods
-        </h2>
-
-        <div className="grid md:grid-cols-3 gap-6">
-          {paymentMethods.length ? (
-            paymentMethods.map((pm, i) => (
-              <div
-                key={i}
-                className="rounded-xl bg-gray-100 dark:bg-gray-800 p-6"
-              >
-                <p className="text-gray-500">{pm.payment_method}</p>
-                <h3 className="text-2xl font-bold mt-2 dark:text-white">
-                  {pm.orders} orders
-                </h3>
-                <p className="text-sm text-gray-500 mt-1">
-                  ₹{Number(pm.revenue).toLocaleString("en-IN")}
-                </p>
-              </div>
-            ))
-          ) : (
-            <p className="text-gray-500 col-span-3 text-center py-4">
-              No payment data yet.
-            </p>
-          )}
-        </div>
-      </div>
-
-      {/* Performance Summary */}
-      <div className="mt-10 bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-6">
-        <h2 className="text-2xl font-bold mb-6 dark:text-white">
-          Performance Summary
-        </h2>
-
-        <div className="grid md:grid-cols-3 gap-6">
-          <div className="rounded-xl bg-gray-100 dark:bg-gray-800 p-6">
-            <p className="text-gray-500">Total Orders</p>
-            <h3 className="text-3xl font-bold mt-3 dark:text-white">
-              {summary.totalOrders}
-            </h3>
+      {/* Compact performance strip */}
+      <div className={`${cardShell} grid grid-cols-3 divide-x divide-gray-100 dark:divide-gray-800 overflow-hidden`}>
+        {[
+          { icon: ShoppingBag, label: "Total orders", value: summary.totalOrders },
+          { icon: Users, label: "Total customers", value: summary.totalCustomers },
+          { icon: CreditCard, label: "Payment methods used", value: paymentMethods.length },
+        ].map(({ icon: Icon, label, value }) => (
+          <div key={label} className="p-5 sm:p-6 flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center shrink-0">
+              <Icon size={18} className="text-gray-500 dark:text-gray-400" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs text-gray-400 truncate">{label}</p>
+              <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white tabular-nums">
+                {value}
+              </p>
+            </div>
           </div>
-
-          <div className="rounded-xl bg-gray-100 dark:bg-gray-800 p-6">
-            <p className="text-gray-500">Total Customers</p>
-            <h3 className="text-3xl font-bold mt-3 dark:text-white">
-              {summary.totalCustomers}
-            </h3>
-          </div>
-
-          <div className="rounded-xl bg-gray-100 dark:bg-gray-800 p-6">
-            <p className="text-gray-500">Payment Methods Used</p>
-            <h3 className="text-3xl font-bold mt-3 dark:text-white">
-              {paymentMethods.length}
-            </h3>
-          </div>
-        </div>
+        ))}
       </div>
     </div>
   );

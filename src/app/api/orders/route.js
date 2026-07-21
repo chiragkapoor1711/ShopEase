@@ -3,6 +3,86 @@ import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import db from "@/lib/db";
 
+export async function GET() {
+  try {
+    // ===========================
+    // Authentication
+    // ===========================
+
+    const cookieStore = await cookies();
+
+    const token = cookieStore.get("token")?.value;
+
+    if (!token) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Please login first.",
+        },
+        { status: 401 },
+      );
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    if (decoded.role !== "user") {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Unauthorized.",
+        },
+        { status: 403 },
+      );
+    }
+
+    // ===========================
+    // Get Orders
+    // ===========================
+
+    const [orders] = await db.query(
+      `
+      SELECT
+        o.id,
+        o.order_number,
+        o.total_amount,
+        o.delivery_charge,
+        o.payment_method,
+        o.payment_status,
+        o.order_status,
+        o.created_at,
+
+        s.store_name,
+        s.store_logo
+
+      FROM orders o
+
+      JOIN stores s
+      ON o.store_id = s.id
+
+      WHERE o.user_id = ?
+
+      ORDER BY o.created_at DESC
+      `,
+      [decoded.id],
+    );
+
+    return NextResponse.json({
+      success: true,
+      orders,
+    });
+  } catch (error) {
+    console.error(error);
+
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Internal Server Error",
+      },
+      { status: 500 },
+    );
+  }
+}
+
 export async function POST(request) {
   try {
     // ===========================
@@ -19,14 +99,11 @@ export async function POST(request) {
           success: false,
           message: "Please login first.",
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET
-    );
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     if (decoded.role !== "user") {
       return NextResponse.json(
@@ -34,7 +111,7 @@ export async function POST(request) {
           success: false,
           message: "Unauthorized.",
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -42,10 +119,7 @@ export async function POST(request) {
     // Request Body
     // ===========================
 
-    const {
-      address_id,
-      payment_method,
-    } = await request.json();
+    const { address_id, payment_method } = await request.json();
 
     if (!address_id) {
       return NextResponse.json(
@@ -53,7 +127,7 @@ export async function POST(request) {
           success: false,
           message: "Please select a delivery address.",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -68,7 +142,7 @@ export async function POST(request) {
       WHERE id = ?
       AND customer_id = ?
       `,
-      [address_id, decoded.id]
+      [address_id, decoded.id],
     );
 
     if (address.length === 0) {
@@ -77,7 +151,7 @@ export async function POST(request) {
           success: false,
           message: "Address not found.",
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -88,25 +162,44 @@ export async function POST(request) {
     const [cartItems] = await db.query(
       `
       SELECT
+    c.id AS cart_id,
+    c.quantity,
 
-        c.id AS cart_id,
-        c.quantity,
+    p.id,
+    p.store_id,
+    p.product_name,
+    p.price,
+    p.stock,
 
-        p.id,
-        p.store_id,
-        p.product_name,
-        p.price,
-        p.discount_price,
-        p.stock
+    o.discount_percentage,
 
-      FROM cart c
+    CASE
+        WHEN o.id IS NOT NULL THEN TRUE
+        ELSE FALSE
+    END AS has_offer,
 
-      JOIN products p
-      ON c.product_id = p.id
+    CASE
+        WHEN o.id IS NOT NULL
+        THEN ROUND(
+            p.price - (p.price * o.discount_percentage / 100),
+            2
+        )
+        ELSE p.price
+    END AS final_price
 
-      WHERE c.customer_id = ?
+FROM cart c
+
+JOIN products p
+ON c.product_id = p.id
+
+LEFT JOIN offers o
+ON o.product_id = p.id
+AND o.status = 'active'
+AND CURDATE() BETWEEN o.start_date AND o.end_date
+
+WHERE c.customer_id = ?
       `,
-      [decoded.id]
+      [decoded.id],
     );
 
     if (cartItems.length === 0) {
@@ -115,7 +208,7 @@ export async function POST(request) {
           success: false,
           message: "Your cart is empty.",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -130,7 +223,7 @@ export async function POST(request) {
             success: false,
             message: `${item.product_name} has only ${item.stock} item(s) left in stock.`,
           },
-          { status: 400 }
+          { status: 400 },
         );
       }
     }
@@ -173,7 +266,6 @@ export async function POST(request) {
     const createdOrders = [];
 
     for (const storeId in groupedCart) {
-
       const items = groupedCart[storeId];
 
       // Calculate Vendor Total
@@ -181,14 +273,11 @@ export async function POST(request) {
       let totalAmount = 0;
 
       for (const item of items) {
-
-        const sellingPrice =
-          Number(item.discount_price) > 0
-            ? Number(item.discount_price)
-            : Number(item.price);
+        const sellingPrice = item.has_offer
+          ? Number(item.final_price)
+          : Number(item.price);
 
         totalAmount += sellingPrice * Number(item.quantity);
-
       }
 
       // Generate Order Number
@@ -221,11 +310,9 @@ export async function POST(request) {
           totalAmount,
           0,
           payment_method,
-          payment_method === "COD"
-            ? "Pending"
-            : "Paid",
+          payment_method === "COD" ? "Pending" : "Paid",
           "Pending",
-        ]
+        ],
       );
 
       createdOrders.push({
@@ -234,7 +321,6 @@ export async function POST(request) {
         store_id: Number(storeId),
         items,
       });
-
     }
 
     // ===========================
@@ -242,16 +328,12 @@ export async function POST(request) {
     // ===========================
 
     for (const order of createdOrders) {
-
       for (const item of order.items) {
+        const sellingPrice = item.has_offer
+          ? Number(item.final_price)
+          : Number(item.price);
 
-        const sellingPrice =
-          Number(item.discount_price) > 0
-            ? Number(item.discount_price)
-            : Number(item.price);
-
-        const subtotal =
-          sellingPrice * Number(item.quantity);
+        const subtotal = sellingPrice * Number(item.quantity);
 
         await db.query(
           `
@@ -265,17 +347,9 @@ export async function POST(request) {
           )
           VALUES (?, ?, ?, ?, ?)
           `,
-          [
-            order.order_id,
-            item.id,
-            item.quantity,
-            sellingPrice,
-            subtotal,
-          ]
+          [order.order_id, item.id, item.quantity, sellingPrice, subtotal],
         );
-
       }
-
     }
 
     // ===========================
@@ -287,9 +361,7 @@ export async function POST(request) {
     // push a product's stock negative.
 
     for (const order of createdOrders) {
-
       for (const item of order.items) {
-
         const [updateResult] = await db.query(
           `
           UPDATE products
@@ -297,21 +369,13 @@ export async function POST(request) {
           WHERE id = ?
           AND stock >= ?
           `,
-          [
-            item.quantity,
-            item.id,
-            item.quantity,
-          ]
+          [item.quantity, item.id, item.quantity],
         );
 
         if (updateResult.affectedRows === 0) {
-          throw new Error(
-            `${item.product_name} is out of stock.`
-          );
+          throw new Error(`${item.product_name} is out of stock.`);
         }
-
       }
-
     }
 
     // ===========================
@@ -323,7 +387,7 @@ export async function POST(request) {
       DELETE FROM cart
       WHERE customer_id = ?
       `,
-      [decoded.id]
+      [decoded.id],
     );
 
     // ===========================
@@ -337,9 +401,7 @@ export async function POST(request) {
       message: "Order placed successfully.",
       orders: createdOrders,
     });
-
   } catch (error) {
-
     try {
       await db.query("ROLLBACK");
     } catch (rollbackError) {
@@ -353,7 +415,7 @@ export async function POST(request) {
         success: false,
         message: error.message || "Internal Server Error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

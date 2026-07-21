@@ -3,14 +3,19 @@
 import { Store } from "lucide-react";
 import CartItem from "./CartItem";
 
-export default function VendorCartGroup({ vendor, items, onIncrease, onDecrease, onRemove }) {
+export default function VendorCartGroup({
+  vendor,
+  items,
+  onIncrease,
+  onDecrease,
+  onRemove,
+}) {
   const subtotal = items.reduce((total, item) => {
-    const price =
-      Number(item.discount_price) > 0
-        ? Number(item.discount_price)
-        : Number(item.price);
+    const price = item.has_offer
+      ? Number(item.final_price)
+      : Number(item.price);
 
-    return total + price * item.quantity;
+    return total + price * Number(item.quantity);
   }, 0);
 
   return (

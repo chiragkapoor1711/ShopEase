@@ -17,7 +17,7 @@ export async function GET(request, { params }) {
       FROM stores
       WHERE id = ?
       `,
-      [vendorId]
+      [vendorId],
     );
 
     if (stores.length === 0) {
@@ -26,7 +26,7 @@ export async function GET(request, { params }) {
           success: false,
           message: "Store not found.",
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -48,30 +48,51 @@ export async function GET(request, { params }) {
 
       ORDER BY c.category_name
       `,
-      [vendorId]
+      [vendorId],
     );
 
     // Products
     const [products] = await db.query(
       `
-      SELECT
-        id,
-        category_id,
-        product_name,
-        product_image,
-        brand,
-        price,   
-        discount_price,
-        stock
-      FROM products
+  SELECT
+    p.id,
+    p.category_id,
+    p.product_name,
+    p.product_image,
+    p.brand,
+    p.price,
+    p.stock,
 
-      WHERE
-        store_id=?
-        AND status='Active'
+    o.discount_percentage,
 
-      ORDER BY product_name
-      `,
-      [vendorId]
+    CASE
+      WHEN o.id IS NOT NULL THEN TRUE
+      ELSE FALSE
+    END AS has_offer,
+
+    CASE
+      WHEN o.id IS NOT NULL
+      THEN ROUND(
+        p.price - (p.price * o.discount_percentage / 100),
+        2
+      )
+      ELSE p.price
+    END AS final_price
+
+  FROM products p
+
+  LEFT JOIN offers o
+    ON o.product_id = p.id
+    AND o.status = 'active'
+    AND CURDATE() BETWEEN o.start_date AND o.end_date
+
+  WHERE
+    p.store_id = ?
+    AND p.status = 'Active'
+
+  ORDER BY p.product_name
+  `,
+      [vendorId],
     );
 
     return NextResponse.json({
@@ -80,7 +101,6 @@ export async function GET(request, { params }) {
       subCategories,
       products,
     });
-
   } catch (error) {
     console.log(error);
 
@@ -91,7 +111,7 @@ export async function GET(request, { params }) {
       },
       {
         status: 500,
-      }
+      },
     );
   }
 }

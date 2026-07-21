@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import toast from "react-hot-toast";
+import { Package } from "lucide-react";
 import {
   Menu,
   X,
@@ -36,8 +37,7 @@ export default function Navbar() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
-  const { cartCount } = useCart();
-
+  const { cartCount, clearCartCount } = useCart();
 
   const roleRef = useRef(null);
   const profileRef = useRef(null);
@@ -49,8 +49,6 @@ export default function Navbar() {
 
   // Only fetch the cart count for logged-in customers, and reset it
   // to 0 immediately on logout so the badge doesn't linger.
-  
-  
 
   // Close the Role / Profile dropdowns when clicking outside of them
   useEffect(() => {
@@ -78,7 +76,7 @@ export default function Navbar() {
     });
 
     setUser(null); // instantly clears user everywhere via context
-    setCartCount(0);
+    clearCartCount();
     setProfileDrawer(false);
     toast.success("Logged out successfully.");
     router.push("/");
@@ -166,7 +164,10 @@ export default function Navbar() {
                         className="text-yellow-400 animate-spin-in"
                       />
                     ) : (
-                      <Moon size={20} className="text-blue-500 animate-spin-in" />
+                      <Moon
+                        size={20}
+                        className="text-blue-500 animate-spin-in"
+                      />
                     )}
                   </span>
                 </button>
@@ -192,7 +193,10 @@ export default function Navbar() {
               {/* Auth section — desktop only */}
               {user ? (
                 <div className="relative" ref={profileRef}>
-                  <button onClick={() => setProfileDrawer(true)} className="ml-2">
+                  <button
+                    onClick={() => setProfileDrawer(true)}
+                    className="ml-2"
+                  >
                     <UserCircle
                       size={34}
                       className="text-blue-600 dark:text-blue-400 hover:scale-110 transition"
@@ -214,12 +218,9 @@ export default function Navbar() {
                   >
                     Sign Up
                   </Link>
-                  
-                  
                 </div>
               )}
             </div>
-            
 
             {/* Mobile Buttons */}
             <div className="flex items-center gap-2 sm:gap-3 md:hidden">
@@ -229,7 +230,10 @@ export default function Navbar() {
                   className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 transition-colors duration-300 hover:scale-110 active:scale-95"
                 >
                   {theme === "dark" ? (
-                    <Sun size={20} className="text-yellow-400 animate-spin-in" />
+                    <Sun
+                      size={20}
+                      className="text-yellow-400 animate-spin-in"
+                    />
                   ) : (
                     <Moon size={20} className="text-blue-500 animate-spin-in" />
                   )}
@@ -333,8 +337,6 @@ export default function Navbar() {
                   >
                     Seller
                   </Link>
-
-                  
                 </div>
               </details>
 
@@ -406,7 +408,9 @@ export default function Navbar() {
         >
           {/* Header */}
           <div className="flex items-center justify-between p-4 sm:p-5 border-b dark:border-gray-700">
-            <h2 className="text-lg sm:text-xl font-bold dark:text-white">My Account</h2>
+            <h2 className="text-lg sm:text-xl font-bold dark:text-white">
+              My Account
+            </h2>
 
             <button
               onClick={() => setProfileDrawer(false)}
@@ -419,11 +423,19 @@ export default function Navbar() {
           {/* User Info */}
           <div className="p-4 sm:p-6 border-b dark:border-gray-700">
             <div className="flex items-center gap-3 sm:gap-4">
-              <UserCircle size={48} className="text-blue-600 dark:text-blue-400 shrink-0 sm:hidden" />
-              <UserCircle size={55} className="text-blue-600 dark:text-blue-400 shrink-0 hidden sm:block" />
+              <UserCircle
+                size={48}
+                className="text-blue-600 dark:text-blue-400 shrink-0 sm:hidden"
+              />
+              <UserCircle
+                size={55}
+                className="text-blue-600 dark:text-blue-400 shrink-0 hidden sm:block"
+              />
 
               <div className="min-w-0">
-                <h3 className="font-semibold dark:text-white truncate">{user.full_name}</h3>
+                <h3 className="font-semibold dark:text-white truncate">
+                  {user.full_name}
+                </h3>
                 <p className="text-sm text-gray-500 truncate">{user.email}</p>
               </div>
             </div>
@@ -439,6 +451,31 @@ export default function Navbar() {
               <User size={20} />
               My Profile
             </Link>
+
+            {/* Show only for customers */}
+            {user.role === "user" && (
+              <Link
+                href="/account/orders"
+                onClick={() => setProfileDrawer(false)}
+                className="flex items-center gap-3 px-4 sm:px-6 py-3 sm:py-4 hover:bg-gray-100 dark:hover:bg-gray-800"
+              >
+                <Package size={20} />
+                My Orders
+              </Link>
+            )}
+
+
+            {/* Show only for customers */}
+            {user.role === "user" && (
+              <Link
+                href="/account/addresses"
+                onClick={() => setProfileDrawer(false)}
+                className="flex items-center gap-3 px-4 sm:px-6 py-3 sm:py-4 hover:bg-gray-100 dark:hover:bg-gray-800"
+              >
+                <Package size={20} />
+                My Address
+              </Link>
+            )}
 
             <Link
               href={

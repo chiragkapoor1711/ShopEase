@@ -8,13 +8,9 @@ export default function CartItem({ item, onIncrease, onDecrease, onRemove }) {
   const [isRemoving, setIsRemoving] = useState(false);
   const [justChanged, setJustChanged] = useState(false);
 
-  const price =
-    Number(item.discount_price) > 0
-      ? Number(item.discount_price)
-      : Number(item.price);
+  const price = item.has_offer ? Number(item.final_price) : Number(item.price);
 
-  const hasDiscount = Number(item.discount_price) > 0 && Number(item.discount_price) < Number(item.price);
-
+  const hasDiscount = item.has_offer;
   function handleRemove() {
     setIsRemoving(true);
     // let the exit animation play before actually removing from state
@@ -30,7 +26,9 @@ export default function CartItem({ item, onIncrease, onDecrease, onRemove }) {
   return (
     <div
       className={`group flex gap-4 sm:gap-5 p-4 sm:p-5 border-2 border-gray-200 hover:border-blue-300 rounded-xl bg-white shadow-sm hover:shadow-md transition-all duration-300 ease-out animate-cart-in ${
-        isRemoving ? "opacity-0 scale-95 -translate-x-2" : "opacity-100 scale-100"
+        isRemoving
+          ? "opacity-0 scale-95 -translate-x-2"
+          : "opacity-100 scale-100"
       }`}
     >
       {/* Image */}
@@ -49,14 +47,21 @@ export default function CartItem({ item, onIncrease, onDecrease, onRemove }) {
           {item.product_name}
         </h3>
 
-        <div className="flex items-center gap-2 mt-1">
+        <div className="flex items-center gap-2 flex-wrap">
           <p className="text-gray-900 font-medium">
             ₹{price.toLocaleString("en-IN")}
           </p>
+
           {hasDiscount && (
-            <p className="text-sm text-gray-400 line-through">
-              ₹{Number(item.price).toLocaleString("en-IN")}
-            </p>
+            <>
+              <p className="text-sm text-gray-400 line-through">
+                ₹{Number(item.price).toLocaleString("en-IN")}
+              </p>
+
+              <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                {item.discount_percentage}% OFF
+              </span>
+            </>
           )}
         </div>
 
@@ -78,7 +83,9 @@ export default function CartItem({ item, onIncrease, onDecrease, onRemove }) {
 
           <span
             className={`font-semibold w-6 text-center transition-transform duration-150 ${
-              justChanged ? "scale-125 text-blue-600" : "scale-100 text-gray-900"
+              justChanged
+                ? "scale-125 text-blue-600"
+                : "scale-100 text-gray-900"
             }`}
           >
             {item.quantity}

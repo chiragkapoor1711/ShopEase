@@ -8,13 +8,6 @@ export default function ProductInfo({
   setQuantity,
   onAddToCart,
 }) {
-  const discountPercentage =
-    product.price > 0
-      ? Math.round(
-          ((product.price - product.discount_price) / product.price) * 100,
-        )
-      : 0;
-
   return (
     <div className="space-y-6 lg:sticky lg:top-24">
       {/* Product Name */}
@@ -59,19 +52,26 @@ export default function ProductInfo({
 
       {/* Price */}
       <div className="flex items-center gap-4 flex-wrap">
-        <span className="text-4xl font-bold text-green-600">
-          ₹{product.discount_price}
-        </span>
+        {product.has_offer ? (
+          <>
+            <span className="text-4xl font-bold text-green-600">
+              ₹{Number(product.final_price).toLocaleString("en-IN")}
+            </span>
 
-        <span className="text-xl text-gray-400 line-through">
-          ₹{product.price}
-        </span>
+            <span className="text-xl text-gray-400 line-through">
+              ₹{Number(product.price).toLocaleString("en-IN")}
+            </span>
 
-        <span className="bg-red-100 text-red-600 px-3 py-1 rounded-full text-sm font-semibold">
-          {discountPercentage}% OFF
-        </span>
+            <span className="bg-red-100 text-red-600 px-3 py-1 rounded-full text-sm font-semibold">
+              {product.discount_percentage}% OFF
+            </span>
+          </>
+        ) : (
+          <span className="text-4xl font-bold text-green-600">
+            ₹{Number(product.price).toLocaleString("en-IN")}
+          </span>
+        )}
       </div>
-
       {/* Stock */}
       <div>
         {product.stock > 0 ? (
@@ -98,7 +98,9 @@ export default function ProductInfo({
         <button
           onClick={onAddToCart}
           className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-semibold transition"
-        >Add to Cart</button>
+        >
+          Add to Cart
+        </button>
 
         <button className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-semibold transition">
           Buy Now

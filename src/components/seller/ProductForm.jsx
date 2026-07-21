@@ -22,7 +22,6 @@ const initialForm = {
   product_image: "",
   description: "",
   price: "",
-  discount_price: "",
   stock: "",
   sku: "",
   brand: "",
@@ -130,7 +129,6 @@ export default function ProductForm({ editingProduct, onCancelEdit, onSaved }) {
         product_image: editingProduct.product_image || "",
         description: editingProduct.description || "",
         price: editingProduct.price,
-        discount_price: editingProduct.discount_price,
         stock: editingProduct.stock,
         sku: editingProduct.sku || "",
         brand: editingProduct.brand || "",
@@ -302,15 +300,7 @@ export default function ProductForm({ editingProduct, onCancelEdit, onSaved }) {
     }
   }
 
-  const price = parseFloat(formData.price);
-  const discountPrice = parseFloat(formData.discount_price);
-  const hasValidDiscount =
-    !isNaN(price) && !isNaN(discountPrice) && discountPrice > 0 && discountPrice < price;
-  const discountPercent = hasValidDiscount
-    ? Math.round(((price - discountPrice) / price) * 100)
-    : null;
-  const discountInvalid =
-    !isNaN(price) && !isNaN(discountPrice) && discountPrice > 0 && discountPrice >= price;
+
 
   return (
     <form
@@ -459,29 +449,7 @@ export default function ProductForm({ editingProduct, onCancelEdit, onSaved }) {
               </div>
             </Field>
 
-            <Field
-              label="Discount price"
-              error={discountInvalid ? "Must be lower than the price." : null}
-            >
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
-                  ₹
-                </span>
-                <input
-                  type="number"
-                  name="discount_price"
-                  value={formData.discount_price}
-                  onChange={handleChange}
-                  placeholder="799"
-                  className={`${discountInvalid ? inputErrorClass : inputClass} pl-7`}
-                />
-                {discountPercent !== null && (
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                    −{discountPercent}%
-                  </span>
-                )}
-              </div>
-            </Field>
+            
           </div>
 
           <div className="grid grid-cols-2 gap-3">

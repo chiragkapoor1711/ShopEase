@@ -1,3 +1,4 @@
+import Link from "next/link"; // Changed from lucide-react to next/link
 import Image from "next/image";
 
 export default function Hero() {
@@ -22,13 +23,15 @@ export default function Hero() {
             </p>
 
             <div className="mt-8 flex flex-wrap gap-4">
-              <button className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition">
-                Shop Now
-              </button>
-
-              <button className="border-2 border-blue-600 text-blue-600 dark:text-blue-400 px-6 py-3 rounded-lg hover:bg-blue-600 hover:text-white transition">
-                Explore Products
-              </button>
+              
+              {/* Changed <button> to Next.js <Link> */}
+              <Link 
+                href="/about" 
+                className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition"
+              >
+                Know more
+              </Link>
+              
             </div>
           </div>
 

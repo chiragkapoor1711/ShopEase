@@ -10,7 +10,7 @@ import {
   Users,
   BarChart3,
   Settings,
-  LogOut,
+  BadgePercent,
 } from "lucide-react";
 
 const menuItems = [
@@ -20,6 +20,7 @@ const menuItems = [
   { title: "Orders", icon: ShoppingCart, href: "/seller/orders" },
   { title: "Customers", icon: Users, href: "/seller/customers" },
   { title: "Reports", icon: BarChart3, href: "/seller/reports" },
+  { title: "Offers", icon: BadgePercent, href: "/seller/offers" },
   { title: "My Store", icon: Settings, href: "/seller/mystore" },
 ];
 

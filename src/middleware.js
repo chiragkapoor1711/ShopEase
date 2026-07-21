@@ -7,7 +7,6 @@ export async function middleware(request) {
   const token = request.cookies.get("token")?.value;
   const { pathname } = request.nextUrl;
 
-  // Public routes
   const publicRoutes = [
     "/",
     "/login",
@@ -28,41 +27,62 @@ export async function middleware(request) {
   try {
     const { payload } = await jwtVerify(token, secret);
 
-    // Admin routes
+    // Admin
     if (pathname.startsWith("/admin")) {
       if (payload.role !== "admin") {
         return NextResponse.redirect(new URL("/", request.url));
       }
     }
 
-    // Seller routes
+    // Seller
     if (pathname.startsWith("/seller")) {
       if (payload.role !== "seller") {
         return NextResponse.redirect(new URL("/", request.url));
       }
     }
 
-    // User routes
-    if (pathname.startsWith("/dashboard")) {
+    // Customer
+    if (
+      pathname.startsWith("/dashboard") ||
+      pathname.startsWith("/cart") ||
+      pathname.startsWith("/checkout") ||
+      pathname.startsWith("/orders") ||
+      pathname.startsWith("/addresses")
+    ) {
       if (payload.role !== "user") {
+        return NextResponse.redirect(new URL("/", request.url));
+      }
+    }
+
+    // Shared pages
+    if (
+      pathname === "/profile" ||
+      pathname === "/change-password"
+    ) {
+      if (!["admin", "seller", "user"].includes(payload.role)) {
         return NextResponse.redirect(new URL("/", request.url));
       }
     }
 
     return NextResponse.next();
 
-  } catch (error) {
+  } catch {
     return NextResponse.redirect(new URL("/", request.url));
   }
 }
 
 export const config = {
   matcher: [
-    "/dashboard/:path*",
     "/admin/:path*",
     "/seller/:path*",
+
+    "/dashboard/:path*",
+    "/cart/:path*",
+    "/checkout/:path*",
+    "/orders/:path*",
+    "/addresses/:path*",
+
     "/profile",
     "/change-password",
-    
   ],
 };

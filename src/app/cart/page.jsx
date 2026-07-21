@@ -54,15 +54,14 @@ export default function CartPage() {
   // Total Items
   const totalItems = cart.reduce((sum, item) => sum + Number(item.quantity), 0);
 
-  // Grand Total
-  const grandTotal = cart.reduce((sum, item) => {
-    const price =
-      Number(item.discount_price) > 0
-        ? Number(item.discount_price)
-        : Number(item.price);
+// Grand Total
+const grandTotal = cart.reduce((sum, item) => {
+  const price = item.has_offer
+    ? Number(item.final_price)
+    : Number(item.price);
 
-    return sum + price * Number(item.quantity);
-  }, 0);
+  return sum + price * Number(item.quantity);
+}, 0);
 
   // Placeholder functions
   const handleIncrease = async (item) => {

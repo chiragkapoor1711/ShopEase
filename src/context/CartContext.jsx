@@ -6,6 +6,9 @@ const CartContext = createContext();
 
 export function CartProvider({ children }) {
   const [cartCount, setCartCount] = useState(0);
+  const clearCartCount = () => {
+    setCartCount(0);
+  };
 
   async function fetchCartCount() {
     try {
@@ -21,7 +24,7 @@ export function CartProvider({ children }) {
       if (data.success) {
         const total = data.cart.reduce(
           (sum, item) => sum + Number(item.quantity),
-          0
+          0,
         );
 
         setCartCount(total);
@@ -43,6 +46,7 @@ export function CartProvider({ children }) {
       value={{
         cartCount,
         fetchCartCount,
+        clearCartCount,
       }}
     >
       {children}
